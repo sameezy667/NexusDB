@@ -54,10 +54,20 @@ def generate_schema_from_image(file_bytes: bytes, mime_type: str, dialect: str =
         
         prompt = "Analyze this whiteboard sketch and extract the database schema as JSON."
 
+        # Helper to strict valid protobuf schema
+        def clean_schema(schema):
+            if isinstance(schema, dict):
+                return {k: clean_schema(v) for k, v in schema.items() if k not in ["default", "title"]}
+            if isinstance(schema, list):
+                return [clean_schema(i) for i in schema]
+            return schema
+
+        schema_dict = clean_schema(SchemaExtraction.model_json_schema())
+
         # Request with structured output
         generation_config = genai.GenerationConfig(
             response_mime_type="application/json",
-            response_schema=SchemaExtraction,
+            response_schema=schema_dict,
             temperature=0.1,
         )
         
