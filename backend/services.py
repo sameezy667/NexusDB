@@ -54,15 +54,20 @@ def generate_schema_from_image(file_bytes: bytes, mime_type: str, dialect: str =
         
         prompt = "Analyze this whiteboard sketch and extract the database schema as JSON."
 
-        # Helper to strict valid protobuf schema
+        # Helper to clean Pydantic schema for Gemini Protobuf compatibility
         def clean_schema(schema):
+            """Remove all Pydantic-specific fields that Gemini doesn't support"""
             if isinstance(schema, dict):
-                return {k: clean_schema(v) for k, v in schema.items() if k not in ["default", "title"]}
+                # Remove metadata fields
+                cleaned = {k: clean_schema(v) for k, v in schema.items() 
+                          if k not in ["default", "title", "$defs", "definitions", "description", "examples"]}
+                return cleaned
             if isinstance(schema, list):
                 return [clean_schema(i) for i in schema]
             return schema
 
-        schema_dict = clean_schema(SchemaExtraction.model_json_schema())
+        raw_schema = SchemaExtraction.model_json_schema()
+        schema_dict = clean_schema(raw_schema)
 
         # Request with structured output
         generation_config = genai.GenerationConfig(
