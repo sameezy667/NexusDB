@@ -75,6 +75,8 @@ def generate_schema_from_image(file_bytes: bytes, mime_type: str, dialect: str =
 
     except Exception as e:
         print(f"Error calling Gemini: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"AI Schema Generation failed: {str(e)}")
 
 def generate_mock_data(request: GenerateDataRequest) -> str:
