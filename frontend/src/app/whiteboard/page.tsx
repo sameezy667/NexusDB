@@ -92,10 +92,18 @@ export default function WhiteboardPage() {
         body: formData,
       });
 
-      const data = await res.json();
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        console.error("Non-JSON Response:", text);
+        throw new Error(`Server responded with ${res.status}: ${res.statusText}`);
+      }
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to generate schema");
+        throw new Error(data?.message || `Error ${res.status}: ${data?.error || res.statusText}`);
       }
 
       // Update State
