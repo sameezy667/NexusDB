@@ -52,27 +52,40 @@ def generate_schema_from_image(file_bytes: bytes, mime_type: str, dialect: str =
             "4. Return ONLY valid JSON that matches the requested schema."
         )
         
-        prompt = "Analyze this whiteboard sketch and extract the database schema as JSON."
+        
+        prompt = """Analyze this whiteboard sketch and extract the database schema as JSON.
 
-        # Helper to clean Pydantic schema for Gemini Protobuf compatibility
-        def clean_schema(schema):
-            """Remove all Pydantic-specific fields that Gemini doesn't support"""
-            if isinstance(schema, dict):
-                # Remove metadata fields
-                cleaned = {k: clean_schema(v) for k, v in schema.items() 
-                          if k not in ["default", "title", "$defs", "definitions", "description", "examples"]}
-                return cleaned
-            if isinstance(schema, list):
-                return [clean_schema(i) for i in schema]
-            return schema
+Return ONLY a valid JSON object with this exact structure (no markdown, no code blocks):
+{
+  "tables": [
+    {
+      "name": "table_name",
+      "columns": [
+        {
+          "name": "column_name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_foreign_key": false,
+          "foreign_key_target": null
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "source_table": "table1",
+      "target_table": "table2",
+      "type": "one-to-many"
+    }
+  ],
+  "sql_code": "CREATE TABLE ..."
+}
 
-        raw_schema = SchemaExtraction.model_json_schema()
-        schema_dict = clean_schema(raw_schema)
+Use snake_case for all identifiers. For foreign_key_target, use null if not a foreign key."""
 
-        # Request with structured output
+        # Simplified config without response_schema
         generation_config = genai.GenerationConfig(
             response_mime_type="application/json",
-            response_schema=schema_dict,
             temperature=0.1,
         )
         
@@ -86,6 +99,7 @@ def generate_schema_from_image(file_bytes: bytes, mime_type: str, dialect: str =
             generation_config=generation_config
         )
 
+        # Parse and validate manually
         extraction = SchemaExtraction.model_validate_json(response.text)
         
         # Sanitize the generated SQL code
