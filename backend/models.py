@@ -12,9 +12,9 @@ class Column(BaseModel):
     
     name: str 
     type: str   # e.g., INTEGER, VARCHAR(255), BOOLEAN
-    is_primary_key: bool
-    is_foreign_key: bool
-    foreign_key_target: str # Target in format "table.column" or empty string
+    is_primary_key: bool = False
+    is_foreign_key: bool = False
+    foreign_key_target: Optional[str] = None
 
 class TableModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
