@@ -1,5 +1,5 @@
 """
-@file models.py
+import traceback
 @description Pydantic models for database schema extraction and API responses.
 @module backend
 """

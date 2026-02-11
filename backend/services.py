@@ -61,8 +61,15 @@ def generate_schema_from_image(file_bytes: bytes, mime_type: str, dialect: str =
             temperature=0.1,
         )
         
+        import base64
+        encoded_image = base64.b64encode(file_bytes).decode('utf-8')
+        
         response = model.generate_content(
-            [system_instructions, prompt, {"mime_type": mime_type, "data": file_bytes}],
+            [
+                system_instructions, 
+                prompt, 
+                {"mime_type": mime_type, "data": encoded_image}
+            ],
             generation_config=generation_config
         )
 
