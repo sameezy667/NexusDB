@@ -107,6 +107,7 @@ export default function WhiteboardPage() {
       } else {
         const text = await res.text();
         console.error("Non-JSON Response:", text);
+        console.log("Full response text for debugging:", text); // Added detailed log
         throw new Error(`Server responded with ${res.status}: ${res.statusText}`);
       }
 
