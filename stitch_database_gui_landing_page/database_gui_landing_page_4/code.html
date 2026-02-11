@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>User Login Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#020202", 
+                        surface: "#080808",
+                        primary: "#8b5cf6",
+                        secondary: "#3b82f6",
+                        accent: "#ec4899",
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "system-ui", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'gradient-x': 'gradient-x 15s ease infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        'gradient-x': {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            },
+                        },
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            background-color: #020202;
+            color: #e5e7eb;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .focused-glow-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #020202;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .focused-glow-bg::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 120vw;
+            height: 120vh;
+            background: radial-gradient(circle at center, rgba(139, 92, 246, 0.25), rgba(59, 130, 246, 0.15) 30%, transparent 60%);
+            filter: blur(80px);
+            opacity: 0.9;
+            animation: pulse 8s infinite alternate;
+        }
+        .focused-glow-bg::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 80vw;
+            height: 80vh;
+            background: radial-gradient(circle at center, rgba(236, 72, 153, 0.15), rgba(59, 130, 246, 0.1) 40%, transparent 70%);
+            filter: blur(100px);
+            opacity: 0.7;
+        }
+        .glass-panel {
+            background: rgba(10, 10, 12, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .input-group input:focus {
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3), 0 0 15px rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.8);
+        }
+        .btn-gradient {
+            background-size: 200% auto;
+            transition: 0.5s;
+        }
+        .btn-gradient:hover {
+            background-position: right center; 
+        }
+        @keyframes fadeInSlide { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-in { animation: fadeInSlide 0.6s ease-out forwards; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center relative selection:bg-primary/30 selection:text-white">
+<div class="focused-glow-bg"></div>
+<main class="w-full max-w-[1440px] flex flex-col items-center justify-center p-4 sm:p-6 relative z-10">
+<div class="w-full max-w-md glass-panel rounded-2xl p-8 sm:p-10 animate-in relative border-t border-white/10 shadow-2xl">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-primary/20 blur-[50px] rounded-full pointer-events-none"></div>
+<div class="flex flex-col items-center mb-8">
+<div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 shadow-lg mb-4 group hover:border-primary/50 hover:bg-primary/10 transition-all duration-300">
+<svg class="text-white w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h1 class="text-2xl font-bold text-white tracking-tight mb-2">Nexus<span class="text-gray-400 font-normal">DB</span></h1>
+<p class="text-gray-400 text-sm font-mono text-center">Authentication</p>
+</div>
+<div class="space-y-4 mb-8">
+<button class="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-medium text-sm transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40 border border-white/10 group btn-gradient">
+<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path></svg>
+<span>Sign in with GitHub</span>
+</button>
+<button class="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-medium text-sm transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40 border border-white/10 group btn-gradient">
+<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"></path></svg>
+<span>Sign in with Google</span>
+</button>
+</div>
+<div class="relative flex items-center py-2 mb-8">
+<div class="flex-grow border-t border-white/10"></div>
+<span class="flex-shrink-0 mx-4 text-gray-500 text-xs font-mono uppercase tracking-wider">Or continue with</span>
+<div class="flex-grow border-t border-white/10"></div>
+</div>
+<form class="space-y-5">
+<div class="space-y-1.5 input-group">
+<label class="text-xs font-mono text-gray-400 ml-1" for="email">Email address</label>
+<div class="relative">
+<input class="w-full bg-[#050505] text-white border border-white/10 rounded-lg px-4 py-2.5 pl-10 text-sm focus:outline-none transition-all duration-300 placeholder-gray-600" id="email" placeholder="name@company.com" type="email"/>
+<svg class="w-4 h-4 text-gray-500 absolute left-3.5 top-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<div class="space-y-1.5 input-group">
+<div class="flex items-center justify-between ml-1">
+<label class="text-xs font-mono text-gray-400" for="password">Password</label>
+<a class="text-[10px] font-mono text-primary hover:text-primary-300 transition-colors" href="#">Forgot password?</a>
+</div>
+<div class="relative">
+<input class="w-full bg-[#050505] text-white border border-white/10 rounded-lg px-4 py-2.5 pl-10 text-sm focus:outline-none transition-all duration-300 placeholder-gray-600" id="password" placeholder="••••••••" type="password"/>
+<svg class="w-4 h-4 text-gray-500 absolute left-3.5 top-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<button class="w-full bg-white text-black font-semibold rounded-lg py-2.5 mt-2 hover:bg-gray-200 transition-colors duration-200 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]">
+                    Sign in to Account
+                </button>
+</form>
+<div class="mt-8 text-center">
+<p class="text-xs text-gray-500">
+                    Don't have an account? 
+                    <a class="text-primary hover:text-primary-300 transition-colors font-medium ml-1" href="#">Request Access</a>
+</p>
+</div>
+<div class="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+</div>
+<div class="mt-8 text-center relative z-10 animate-in" style="animation-delay: 0.2s;">
+<div class="flex items-center gap-6 text-[10px] font-mono text-gray-600">
+<a class="hover:text-gray-400 transition-colors" href="#">Documentation</a>
+<a class="hover:text-gray-400 transition-colors" href="#">Status</a>
+<a class="hover:text-gray-400 transition-colors" href="#">Privacy</a>
+<a class="hover:text-gray-400 transition-colors" href="#">Terms</a>
+</div>
+</div>
+</main>
+<script>
+        lucide.createIcons();
+    </script>
+
+</body></html>

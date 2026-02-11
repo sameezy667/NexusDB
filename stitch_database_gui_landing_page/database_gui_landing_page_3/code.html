@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>System Settings Page</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#020202", 
+                        surface: "#080808",
+                        primary: "#8b5cf6",
+                        secondary: "#3b82f6",
+                        accent: "#ec4899",
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "system-ui", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            background-color: #020202;
+            color: #e5e7eb;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .focused-glow-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #020202;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .focused-glow-bg::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(139, 92, 246, 0.08), transparent 70%);
+            filter: blur(80px);
+            opacity: 0.8;
+        }
+        .focused-glow-bg::after {
+            content: '';
+            position: absolute;
+            top: 80%;
+            left: 80%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 300px;
+            background: radial-gradient(circle at center, rgba(59, 130, 246, 0.06), transparent 60%);
+            filter: blur(80px);
+            opacity: 0.6;
+        }
+        .glass-panel {
+            background: rgba(10, 10, 12, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .nav-item.active {
+            background: rgba(139, 92, 246, 0.1);
+            color: #fff;
+            border-left-color: #8b5cf6;
+        }
+        .form-input {
+            background: #0A0A0C;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.2s;
+        }
+        .form-input:focus {
+            border-color: rgba(139, 92, 246, 0.5);
+            outline: none;
+            box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.5);
+        }
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #8b5cf6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #8b5cf6;
+        }
+        .danger-zone-card {
+            background: rgba(20, 5, 5, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            box-shadow: 0 0 40px -10px rgba(239, 68, 68, 0.05);
+        }
+        .danger-zone-card:hover {
+            border-color: rgba(239, 68, 68, 0.4);
+            box-shadow: 0 0 40px -10px rgba(239, 68, 68, 0.1);
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative selection:bg-primary/30 selection:text-white">
+<div class="focused-glow-bg"></div>
+<nav class="w-full z-50 py-4 px-6 fixed top-0 glass-panel border-b border-white/5">
+<div class="max-w-7xl mx-auto flex items-center justify-between">
+<div class="flex items-center gap-10">
+<a class="flex items-center gap-3 group" href="#">
+<div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-300">
+<svg class="text-white w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="font-mono font-bold text-sm tracking-tight text-white group-hover:text-primary transition-colors">Nexus<span class="text-gray-500">DB</span></span>
+</a>
+<div class="hidden md:flex items-center gap-6 text-xs font-mono font-medium text-gray-500">
+<a class="hover:text-gray-300 transition-colors" href="#">Overview</a>
+<a class="hover:text-gray-300 transition-colors" href="#">Clusters</a>
+<a class="hover:text-gray-300 transition-colors" href="#">Observability</a>
+<a class="text-white transition-colors" href="#">Settings</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<a class="text-xs font-mono text-gray-500 hover:text-white transition-colors" href="#">Docs</a>
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-secondary p-[1px]">
+<div class="w-full h-full rounded-full bg-black flex items-center justify-center">
+<span class="text-[10px] font-bold text-white">JD</span>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<main class="flex-grow z-10 pt-32 pb-20 px-4 sm:px-6 w-full max-w-7xl mx-auto">
+<div class="flex flex-col mb-10 animate-in">
+<h1 class="text-3xl font-bold text-white tracking-tight mb-2">Project Settings</h1>
+<p class="text-gray-500 text-sm">Manage configuration for <span class="text-white font-mono bg-white/5 px-1.5 py-0.5 rounded text-xs border border-white/10">prod-db-nexus-01</span></p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 animate-in" style="animation-delay: 0.1s;">
+<div class="lg:col-span-3">
+<nav class="flex flex-col space-y-1 sticky top-32">
+<a class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-gray-400 border-l-2 border-transparent" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    General
+                </a>
+<a class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-gray-400 border-l-2 border-transparent hover:text-white" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Security
+                </a>
+<a class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-gray-400 border-l-2 border-transparent hover:text-white" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    API Keys
+                </a>
+<a class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-gray-400 border-l-2 border-transparent hover:text-white" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Billing
+                </a>
+<a class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-gray-400 border-l-2 border-transparent hover:text-white" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Team
+                </a>
+</nav>
+</div>
+<div class="lg:col-span-9 space-y-8">
+<section>
+<div class="flex items-end justify-between mb-4">
+<h2 class="text-lg font-medium text-white">General Configuration</h2>
+</div>
+<div class="glass-panel rounded-xl p-6 space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-xs font-mono text-gray-400 uppercase tracking-wide">Project Name</label>
+<input class="form-input w-full rounded-md px-3 py-2 text-sm" type="text" value="Nexus Production DB"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-mono text-gray-400 uppercase tracking-wide">Project ID</label>
+<div class="flex">
+<input class="form-input w-full rounded-l-md px-3 py-2 text-sm text-gray-500 bg-[#050505] cursor-not-allowed" readonly="" type="text" value="proj_8x92nm_plq"/>
+<button class="px-3 border border-l-0 border-white/10 rounded-r-md hover:bg-white/5 transition-colors">
+<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-mono text-gray-400 uppercase tracking-wide">Region</label>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+<div class="border border-primary/50 bg-primary/10 rounded-lg p-3 cursor-pointer flex items-center justify-between relative overflow-hidden group">
+<div class="flex items-center gap-3">
+<img alt="US" class="w-5 h-5 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB05nhZRjxU-UUYaNyh47gQk14MIYCopZcY9V9HnQ05_tY70mirK_XrvJBnkm-JzknUZNYYvmq_IW_7hsmLYCEc0T5FzZqN9q0DIwGySRQbHLJHbnMYdoVSZUy5W50RfHbqy4u2zvocR2brhe_YOU-R6ejXW2eIvx1oVY3nK-EMTDGS8iWN8V6vGnFmUOkuRynrcJqO5GJtYuKnBQ9NH90tZiDWhS_WSTIT2minlbfjQ2VnBRlqsGr1MPa46lmcDP6a19z95x3X10"/>
+<div>
+<div class="text-sm font-medium text-white">us-east-1</div>
+<div class="text-[10px] text-gray-400">N. Virginia</div>
+</div>
+</div>
+<div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(139,92,246,0.6)]"></div>
+</div>
+<div class="border border-white/10 bg-[#0A0A0C] hover:border-white/20 rounded-lg p-3 cursor-pointer flex items-center justify-between opacity-60 hover:opacity-100 transition-all">
+<div class="flex items-center gap-3">
+<img alt="EU" class="w-5 h-5 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDW4jU2PwlyizWFp5E7KXNtxvNCVDljn7lNNSV3RztYmn7DLmUHDmvz_bBHJl1vTA9mMFCouSdZDwr7V1er3hMA6wN2lOoDsSmR6aEcW7iqnd9MmFTHDtIw7_roI_7nk1SPMq_ZyNDEk8jKitH1aFx-oTWLLSYjDMfOkrgix84_jq3rryNlkK7y2wqOJ6DKHAKpTVbzWrf-zlVFLX0sqpA7hm7dv6Dmja8mGgcIfOjZ4OhndMHt27DBeUewfsLyWGLDJ2JEaejHrME"/>
+<div>
+<div class="text-sm font-medium text-white">eu-west-1</div>
+<div class="text-[10px] text-gray-400">Ireland</div>
+</div>
+</div>
+</div>
+<div class="border border-white/10 bg-[#0A0A0C] hover:border-white/20 rounded-lg p-3 cursor-pointer flex items-center justify-between opacity-60 hover:opacity-100 transition-all">
+<div class="flex items-center gap-3">
+<img alt="JP" class="w-5 h-5 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZ8Z-0__-Ho0kE5364E-hsb_NGx2j2nPNaHAr9EY--BXqc3tjv_5ZCHvayElhBPsNjidkNjSBLIcCG9xw8mZo0LymduGSe_ItITjYN24qHAkZ49C0YClw9fFWQCMd21mFUj8TBPbBIYltTd59Q-l56pg31ioPRY5N9JGlznzw1Gx_6Cu1vAZ_yv_mZzPcE2I8DG_g-CrreO0pTfptNGDJ_jpVKOD9M7WhBwzLowNztDJln1-dU387Y19J3nHMcecQ45g-6GnKapGg"/>
+<div>
+<div class="text-sm font-medium text-white">ap-northeast</div>
+<div class="text-[10px] text-gray-400">Tokyo</div>
+</div>
+</div>
+</div>
+</div>
+<p class="text-[11px] text-gray-500 mt-1">Migration between regions requires downtime.</p>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-end justify-between mb-4">
+<h2 class="text-lg font-medium text-white">Environment Variables</h2>
+<button class="text-xs flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-md transition-all text-white">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                        Add Variable
+                    </button>
+</div>
+<div class="glass-panel rounded-xl overflow-hidden border border-white/10">
+<div class="grid grid-cols-12 gap-4 px-4 py-2 border-b border-white/5 bg-white/[0.02] text-[10px] uppercase font-mono text-gray-500 font-medium">
+<div class="col-span-4">Key</div>
+<div class="col-span-6">Value</div>
+<div class="col-span-2 text-right">Action</div>
+</div>
+<div class="divide-y divide-white/5">
+<div class="grid grid-cols-12 gap-4 px-4 py-3 items-center group hover:bg-white/[0.02] transition-colors">
+<div class="col-span-4">
+<span class="font-mono text-xs text-primary-300">DATABASE_URL</span>
+</div>
+<div class="col-span-6 flex items-center gap-2">
+<span class="font-mono text-xs text-gray-400">postgres://user:***...</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity">
+<svg class="w-3 h-3 text-gray-500 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<div class="col-span-2 flex justify-end gap-2">
+<button class="text-gray-500 hover:text-white"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+<button class="text-gray-500 hover:text-red-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-4 py-3 items-center group hover:bg-white/[0.02] transition-colors">
+<div class="col-span-4">
+<span class="font-mono text-xs text-purple-300">API_SECRET_KEY</span>
+</div>
+<div class="col-span-6 flex items-center gap-2">
+<span class="font-mono text-xs text-gray-400">sk_live_51M***...</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity">
+<svg class="w-3 h-3 text-gray-500 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<div class="col-span-2 flex justify-end gap-2">
+<button class="text-gray-500 hover:text-white"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+<button class="text-gray-500 hover:text-red-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-4 py-3 items-center group hover:bg-white/[0.02] transition-colors">
+<div class="col-span-4">
+<span class="font-mono text-xs text-blue-300">NODE_ENV</span>
+</div>
+<div class="col-span-6 flex items-center gap-2">
+<span class="font-mono text-xs text-gray-400">production</span>
+</div>
+<div class="col-span-2 flex justify-end gap-2">
+<button class="text-gray-500 hover:text-white"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+<button class="text-gray-500 hover:text-red-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-end justify-between mb-4">
+<h2 class="text-lg font-medium text-white">Features &amp; Behavior</h2>
+</div>
+<div class="glass-panel rounded-xl p-6 space-y-5">
+<div class="flex items-center justify-between">
+<div>
+<div class="text-sm font-medium text-gray-200">Maintenance Mode</div>
+<div class="text-[11px] text-gray-500 max-w-sm mt-0.5">Disables public access and returns a 503 status code. Only team members can access.</div>
+</div>
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-600 left-0 transition-all duration-300" id="toggle1" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-700 cursor-pointer" for="toggle1"></label>
+</div>
+</div>
+<div class="w-full h-[1px] bg-white/5"></div>
+<div class="flex items-center justify-between">
+<div>
+<div class="text-sm font-medium text-gray-200">Debug Logging</div>
+<div class="text-[11px] text-gray-500 max-w-sm mt-0.5">Increases log verbosity. Recommended only for temporary troubleshooting.</div>
+</div>
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-600 left-0 transition-all duration-300" id="toggle2" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-700 cursor-pointer" for="toggle2"></label>
+</div>
+</div>
+<div class="w-full h-[1px] bg-white/5"></div>
+<div class="flex items-center justify-between">
+<div>
+<div class="text-sm font-medium text-gray-200">Public IP Access</div>
+<div class="text-[11px] text-gray-500 max-w-sm mt-0.5">Allow direct connections from any IP address.</div>
+</div>
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-primary right-0 transition-all duration-300" id="toggle3" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-5 rounded-full bg-primary cursor-pointer" for="toggle3"></label>
+</div>
+</div>
+</div>
+</section>
+<section class="pt-8">
+<div class="danger-zone-card rounded-xl p-6 relative overflow-hidden group">
+<div class="absolute inset-0 bg-red-600/[0.02] pointer-events-none group-hover:bg-red-600/[0.04] transition-colors"></div>
+<div class="relative z-10">
+<h3 class="text-base font-bold text-red-500 mb-4 flex items-center gap-2">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                            Danger Zone
+                        </h3>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-red-500/10">
+<div>
+<h4 class="text-sm font-medium text-white">Transfer Ownership</h4>
+<p class="text-xs text-gray-400 mt-1">Transfer this project to another user or team.</p>
+</div>
+<button class="px-4 py-2 text-xs font-medium text-white bg-transparent border border-white/10 hover:border-white/30 rounded-md transition-colors whitespace-nowrap">
+                                Transfer
+                            </button>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-6">
+<div>
+<h4 class="text-sm font-medium text-white">Delete Project</h4>
+<p class="text-xs text-gray-400 mt-1">Once you delete a project, there is no going back. Please be certain.</p>
+</div>
+<button class="px-4 py-2 text-xs font-medium text-white bg-red-500/80 hover:bg-red-500 border border-transparent rounded-md transition-colors shadow-lg shadow-red-900/20 whitespace-nowrap">
+                                Delete Project
+                            </button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<script>
+    lucide.createIcons();
+</script>
+
+</body></html>

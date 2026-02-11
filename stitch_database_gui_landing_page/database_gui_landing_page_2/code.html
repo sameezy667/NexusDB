@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dev-Centric Database GUI Landing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#020202", 
+                        surface: "#080808",
+                        primary: "#8b5cf6",
+                        secondary: "#3b82f6",
+                        accent: "#ec4899",
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "system-ui", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            background-color: #020202;
+            color: #e5e7eb;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }.focused-glow-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #020202;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .focused-glow-bg::before {
+            content: '';
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 500px;
+            background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.05) 40%, transparent 70%);
+            filter: blur(60px);
+            opacity: 0.8;
+        }
+        .focused-glow-bg::after {
+            content: '';
+            position: absolute;
+            top: 70%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 300px;
+            background: radial-gradient(circle at center, rgba(37, 99, 235, 0.08), transparent 60%);
+            filter: blur(80px);
+            opacity: 0.6;
+        }
+        .glass-panel {
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .minimal-card {
+            background: #050505;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .minimal-card:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 30px -10px rgba(139, 92, 246, 0.15);
+        }
+        .cmd-palette {
+            background: rgba(10, 10, 12, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 4px 20px -5px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 0 20px rgba(255,255,255,0.02);
+            transition: all 0.2s ease;
+        }
+        .cmd-palette:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 
+                0 8px 30px -5px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        .cmd-palette:focus-within {
+            background: rgba(15, 15, 18, 0.9);
+            border-color: rgba(139, 92, 246, 0.6);
+            box-shadow: 
+                0 0 0 1px rgba(139, 92, 246, 0.5),
+                0 10px 40px -10px rgba(139, 92, 246, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        .log-time { color: #52525b; font-family: 'JetBrains Mono', monospace; }
+        .log-info { color: #3b82f6; font-weight: 600; }
+        .log-warn { color: #f59e0b; font-weight: 600; }
+        .log-error { color: #ef4444; font-weight: 600; }
+        .log-success { color: #22c55e; font-weight: 600; }
+        .log-string { color: #a5b4fc; }
+        .log-keyword { color: #d8b4fe; }
+        .logs-scroll::-webkit-scrollbar { width: 4px; }
+        .logs-scroll::-webkit-scrollbar-track { background: transparent; }
+        .logs-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+        .logs-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+        .dashboard-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #9ca3af;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .dashboard-nav-item:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.05);
+        }
+        .dashboard-nav-item.active {
+            color: #fff;
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+        @keyframes fadeInSlide { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-in { animation: fadeInSlide 0.5s ease-out forwards; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative selection:bg-primary/30 selection:text-white">
+<div class="focused-glow-bg"></div>
+<nav class="w-full z-50 py-4 px-6 fixed top-0 glass-panel">
+<div class="max-w-7xl mx-auto flex items-center justify-between">
+<div class="flex items-center gap-10">
+<a class="flex items-center gap-3 group" href="#">
+<div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-300">
+<svg class="text-white w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="font-mono font-bold text-sm tracking-tight text-white group-hover:text-primary transition-colors">Nexus<span class="text-gray-500">DB</span></span>
+</a>
+<div class="hidden md:flex items-center gap-6 text-xs font-mono font-medium text-gray-500">
+<a class="text-white hover:text-white transition-colors" href="#">Overview</a>
+<a class="hover:text-gray-300 transition-colors" href="#">Clusters</a>
+<a class="hover:text-gray-300 transition-colors" href="#">Observability</a>
+<a class="hover:text-gray-300 transition-colors" href="#">Settings</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<a class="text-xs font-mono text-gray-500 hover:text-white transition-colors" href="#">Docs</a>
+<button class="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-1.5 rounded text-xs font-mono transition-all">
+                Login
+            </button>
+</div>
+</div>
+</nav>
+<main class="flex-grow z-10 flex flex-col items-center pt-32 pb-20 px-4 sm:px-6 w-full max-w-[1440px] mx-auto">
+<div class="text-center max-w-4xl mx-auto mb-12 relative z-10 animate-in">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/20 text-[10px] font-mono text-primary-300 mb-8 backdrop-blur-sm">
+<span class="relative flex h-1.5 w-1.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></span>
+</span>
+<span>v3.0.0-rc1</span>
+</div>
+<h1 class="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-white leading-tight">
+            Dev-Centric Database<br/>
+<span class="text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-300 to-blue-500 font-extrabold">Management GUI</span>
+</h1>
+<p class="text-base text-gray-500 max-w-2xl mx-auto font-light leading-relaxed font-mono">
+            Direct access to your edge functions, auth, and data. <br class="hidden sm:block"/>
+            Precision tools for the modern backend developer.
+        </p>
+</div>
+<div class="w-full max-w-2xl mb-16 relative z-20 animate-in delay-100">
+<div class="relative flex items-center cmd-palette rounded-lg px-4 py-3 cursor-text group">
+<svg class="w-4 h-4 text-gray-500 group-hover:text-primary transition-colors mr-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-gray-500 text-sm font-mono flex-grow group-hover:text-gray-300 transition-colors">Search &gt; Type to filter...</span>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#1A1A1E] border border-white/10 text-[10px] font-mono text-gray-500 shadow-sm group-hover:border-primary/30 transition-colors">
+<span>CTRL</span><span>K</span>
+</div>
+</div>
+</div>
+<div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch relative animate-in delay-200">
+<div class="lg:col-span-3 flex flex-col gap-6">
+<div class="minimal-card rounded-lg p-5 group cursor-pointer flex-1 flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between mb-4">
+<div class="text-gray-500 group-hover:text-primary transition-colors">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-900">Normal</span>
+</div>
+<h3 class="text-xs font-mono uppercase tracking-wider text-gray-500 mb-1">Latency (p99)</h3>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-white font-mono">24ms</span>
+</div>
+</div>
+<div class="h-12 w-full mt-4 relative opacity-50 group-hover:opacity-100 transition-opacity">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 40">
+<path d="M0 35 L10 32 L20 34 L30 25 L40 28 L50 20 L60 22 L70 15 L80 18 L90 10 L100 25" fill="none" stroke="#7c3aed" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+<div class="minimal-card rounded-lg p-5 group cursor-pointer flex-1">
+<div class="flex items-start justify-between mb-4">
+<div class="text-gray-500 group-hover:text-primary transition-colors">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+</div>
+<h3 class="text-xs font-mono uppercase tracking-wider text-gray-500 mb-1">Active Policies</h3>
+<div class="flex items-center justify-between mt-2">
+<span class="text-white font-mono text-lg">12 Rules</span>
+<span class="text-[10px] text-gray-600 font-mono">RLS Enabled</span>
+</div>
+</div>
+</div>
+<div class="lg:col-span-6 relative group">
+<div class="bg-[#09090b] border border-white/10 rounded-lg shadow-2xl overflow-hidden flex flex-col h-[520px] relative z-10 ring-1 ring-white/5">
+<div class="h-9 border-b border-white/5 flex items-center justify-between px-3 bg-[#0c0c0e]">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-[#3d3d42]"></div>
+<div class="w-2 h-2 rounded-full bg-[#3d3d42]"></div>
+<div class="w-2 h-2 rounded-full bg-[#3d3d42]"></div>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-0.5 rounded bg-black/40 border border-white/5">
+<svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="text-[10px] font-mono text-gray-400">prod-db.nexus.app</span>
+</div>
+</div>
+<div class="flex flex-1 overflow-hidden">
+<div class="w-[180px] hidden sm:flex border-r border-white/5 bg-[#0a0a0c] flex-col py-3 px-2 gap-1">
+<div class="dashboard-nav-item active">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>
+<span>Logs</span>
+</div>
+<div class="dashboard-nav-item">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>
+<span>Database</span>
+</div>
+<div class="dashboard-nav-item">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>
+<span>Auth</span>
+</div>
+<div class="dashboard-nav-item">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>
+<span>Edge Func</span>
+</div>
+<div class="dashboard-nav-item">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>
+<span>Storage</span>
+</div>
+<div class="mt-auto border-t border-white/5 pt-2">
+<div class="dashboard-nav-item">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>
+<span>Settings</span>
+</div>
+</div>
+</div>
+<div class="flex-1 bg-[#050505] flex flex-col relative">
+<div class="h-8 border-b border-white/5 flex items-center justify-between px-4">
+<span class="text-[10px] font-mono text-gray-400 uppercase">Live Tail</span>
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+<span class="text-[10px] font-mono text-green-500">Connected</span>
+</div>
+</div>
+<div class="flex-1 p-4 overflow-y-auto logs-scroll font-mono text-[11px] leading-relaxed">
+<div class="space-y-1.5">
+<div class="flex gap-3 pb-1 border-b border-white/[0.02]">
+<span class="log-time w-16 shrink-0 opacity-50">14:02:40</span>
+<span class="log-info w-8 shrink-0">INF</span>
+<span class="text-gray-400">Connection pool initialized <span class="text-gray-600">--max 20</span></span>
+</div>
+<div class="flex gap-3 pb-1 border-b border-white/[0.02]">
+<span class="log-time w-16 shrink-0 opacity-50">14:02:41</span>
+<span class="log-success w-8 shrink-0">CON</span>
+<span class="text-gray-300">Client attached <span class="log-string">192.168.1.42</span></span>
+</div>
+<div class="flex gap-3 pb-1 border-b border-white/[0.02]">
+<span class="log-time w-16 shrink-0 opacity-50">14:02:42</span>
+<span class="log-success w-8 shrink-0">AUTH</span>
+<span class="text-gray-300">Token verified: <span class="log-string">"uid_8x92"</span></span>
+</div>
+<div class="flex gap-3 pb-1 border-b border-white/[0.02] bg-yellow-500/5 -mx-2 px-2 rounded-sm">
+<span class="log-time w-16 shrink-0 opacity-50">14:02:45</span>
+<span class="log-warn w-8 shrink-0">WARN</span>
+<span class="text-yellow-100/90">Slow query detected <span class="log-keyword">Table::Users</span> (154ms)</span>
+</div>
+<div class="flex gap-3 pb-1 border-b border-white/[0.02]">
+<span class="log-time w-16 shrink-0 opacity-50">14:02:46</span>
+<span class="log-info w-8 shrink-0">SCL</span>
+<span class="text-gray-300">Scaling policy trigger <span class="log-keyword">+2 replicas</span></span>
+</div>
+<div class="flex gap-3 pb-1 border-b border-white/[0.02]">
+<span class="log-time w-16 shrink-0 opacity-50">14:02:48</span>
+<span class="log-success w-8 shrink-0">SYNC</span>
+<span class="text-gray-300">Replication lag: <span class="log-success">0ms</span></span>
+</div>
+<div class="flex gap-3 pb-1 border-b border-white/[0.02]">
+<span class="log-time w-16 shrink-0 opacity-50">14:03:01</span>
+<span class="log-info w-8 shrink-0">HTTP</span>
+<span class="text-gray-300">GET <span class="log-string">/api/v1/metrics</span> 200 OK</span>
+</div>
+<div class="flex gap-3 pb-1 border-b border-white/[0.02]">
+<span class="log-time w-16 shrink-0 opacity-50">14:03:05</span>
+<span class="log-info w-8 shrink-0">JOB</span>
+<span class="text-gray-300">Snapshot started <span class="log-keyword">snap-09212</span></span>
+</div>
+<div class="flex gap-3 pb-1 border-b border-white/[0.02]">
+<span class="log-time w-16 shrink-0 opacity-50">14:03:08</span>
+<span class="log-info w-8 shrink-0">QRY</span>
+<span class="text-gray-300">SELECT * FROM <span class="log-keyword">txns</span> WHERE val &gt; 1000</span>
+</div>
+<div class="flex gap-3 animate-pulse">
+<span class="log-time w-16 shrink-0 opacity-50">14:03:12</span>
+<span class="log-success w-8 shrink-0">DONE</span>
+<span class="text-gray-300">Snapshot uploaded (7s)</span>
+</div>
+</div>
+</div>
+<div class="p-2 border-t border-white/10 bg-[#08080a]">
+<div class="flex items-center gap-2 text-xs font-mono">
+<span class="text-green-500">➜</span>
+<span class="text-blue-400">~</span>
+<span class="text-gray-500">nexus logs tail --follow</span>
+<span class="w-1.5 h-4 bg-gray-500 animate-pulse"></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="lg:col-span-3 flex flex-col gap-6">
+<div class="minimal-card rounded-lg p-5 group cursor-pointer flex-1">
+<div class="flex items-start justify-between mb-4">
+<div class="text-gray-500 group-hover:text-primary transition-colors">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div class="flex items-center text-[10px] text-gray-500 border border-white/10 px-2 py-0.5 rounded hover:bg-white/5 transition-colors">
+<span>Manage</span>
+</div>
+</div>
+<h3 class="text-xs font-mono uppercase tracking-wider text-gray-500 mb-2">Team Access</h3>
+<div class="flex -space-x-2 mb-2">
+<img alt="User" class="w-7 h-7 rounded-full border-2 border-[#050505] grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-d8jrQxetBXr_MISDelX8njxQA4waDT2sD5fEVMtaAGKOMjP5YFFIIln81jvStCxbg1mCyDmPCKzrugZsevnMmrz7UA4ajS9HYP402vMBJMqHmj5wY4uJRh02RC47rTsF2xeIfdg5_YlEouB76wOn931D1MO2jv2WE94yJmYa6nEqD_FkpRM-GCEfQ1rtt4oBTm_snvch8IiGKURboQdNCyCedQYd3U8jeuGu45ZVGYO4OI6K3PhaZsWhgiA9AgFIzjnUtdE6048"/>
+<img alt="User" class="w-7 h-7 rounded-full border-2 border-[#050505] grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBL7JMVkMuaf3uEqlpYDi70Nz7EkcecpkMxmIJTmb-fjsAzkYk-QpYr0Sd-mTKUnws8Bvmn1du9P8GV2UXVQ7EvWnDEb4FsixpG1U-4NdSd6vQjco2lS7Db3KUfHa30gkSItd00vblgweBkqi84SVdQo6qx3pjTD1Q94tObo-z_tusu8NWesQkA_Sz-FV846k33z8m__3mms6I3wAmDW7PSDyafYA7vMbjOVhlfwn03ln1qcmulhCmJT24mNVJsi5gJDw6yqexZ5cU"/>
+<div class="w-7 h-7 rounded-full bg-[#1A1A1E] border-2 border-[#050505] flex items-center justify-center text-[9px] text-gray-400 font-mono">+3</div>
+</div>
+</div>
+<div class="minimal-card rounded-lg p-5 group cursor-pointer flex-1">
+<div class="flex items-start justify-between mb-4">
+<div class="text-gray-500 group-hover:text-primary transition-colors">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<h3 class="text-xs font-mono uppercase tracking-wider text-gray-500 mb-1">Storage</h3>
+<div class="flex items-end justify-between mb-2">
+<p class="text-2xl font-bold text-white font-mono">45<span class="text-sm text-gray-500">.2 GB</span></p>
+<span class="text-[10px] text-gray-600 font-mono mb-1">of 100GB</span>
+</div>
+<div class="h-1 w-full bg-[#1A1A1E] rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-blue-600 to-purple-600 w-[45%]"></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+    lucide.createIcons();
+</script>
+
+</body></html>

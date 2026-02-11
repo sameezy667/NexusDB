@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Database Clusters Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#020202", 
+                        surface: "#080808",
+                        primary: "#8b5cf6",
+                        secondary: "#3b82f6",
+                        accent: "#ec4899",
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "system-ui", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            background-color: #020202;
+            color: #e5e7eb;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .focused-glow-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #020202;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .focused-glow-bg::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 30%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle at center, rgba(139, 92, 246, 0.08), transparent 60%);
+            filter: blur(80px);
+            opacity: 0.6;
+        }
+        .focused-glow-bg::after {
+            content: '';
+            position: absolute;
+            bottom: 20%;
+            right: 20%;
+            transform: translate(50%, 50%);
+            width: 500px;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(59, 130, 246, 0.06), transparent 60%);
+            filter: blur(90px);
+            opacity: 0.5;
+        }
+        .glass-panel {
+            background: rgba(5, 5, 5, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .minimal-card {
+            background: #050505;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .minimal-card:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 20px -5px rgba(139, 92, 246, 0.1);
+            transform: translateY(-2px);
+        }
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #9ca3af;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: 4px;
+        }
+        .sidebar-item:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.03);
+        }
+        .sidebar-item.active {
+            color: #fff;
+            background: rgba(139, 92, 246, 0.08);
+            border-color: rgba(139, 92, 246, 0.15);
+        }.sparkline-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: dash 3s ease-out forwards;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: 0; }
+        }::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+        .glow-button {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(59, 130, 246, 0.9));
+            box-shadow: 0 0 20px -5px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 30px -5px rgba(139, 92, 246, 0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex text-sm antialiased selection:bg-primary/30 selection:text-white">
+<div class="focused-glow-bg"></div>
+<aside class="w-64 bg-[#030303] border-r border-white/5 z-20 flex flex-col h-full flex-shrink-0">
+<div class="h-16 flex items-center px-6 border-b border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 text-primary">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="font-mono font-bold tracking-tight text-white">Nexus<span class="text-gray-600">DB</span></span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto py-6 px-3 space-y-8">
+<div>
+<h4 class="px-3 text-[10px] font-mono uppercase text-gray-600 mb-2 tracking-wider">Platform</h4>
+<div class="sidebar-item">
+<i class="w-4 h-4" data-lucide="layout-grid"></i>
+<span>Dashboard</span>
+</div>
+<div class="sidebar-item active">
+<i class="w-4 h-4" data-lucide="database"></i>
+<span>Clusters</span>
+</div>
+<div class="sidebar-item">
+<i class="w-4 h-4" data-lucide="activity"></i>
+<span>Observability</span>
+</div>
+<div class="sidebar-item">
+<i class="w-4 h-4" data-lucide="shield-check"></i>
+<span>Access Control</span>
+</div>
+</div>
+<div>
+<h4 class="px-3 text-[10px] font-mono uppercase text-gray-600 mb-2 tracking-wider">Features</h4>
+<div class="sidebar-item">
+<i class="w-4 h-4" data-lucide="zap"></i>
+<span>Edge Functions</span>
+</div>
+<div class="sidebar-item">
+<i class="w-4 h-4" data-lucide="users"></i>
+<span>Auth</span>
+</div>
+<div class="sidebar-item">
+<i class="w-4 h-4" data-lucide="hard-drive"></i>
+<span>Storage</span>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-white/5">
+<div class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-blue-500 p-[1px]">
+<div class="w-full h-full rounded-full bg-black flex items-center justify-center">
+<span class="text-xs font-mono font-bold text-white">JD</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-medium text-white truncate">Jane Doe</p>
+<p class="text-[10px] text-gray-500 truncate font-mono">jane@nexus.dev</p>
+</div>
+<i class="w-4 h-4 text-gray-500" data-lucide="more-vertical"></i>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col h-full relative z-10 overflow-hidden">
+<header class="h-16 flex items-center justify-between px-8 border-b border-white/5 glass-panel z-20">
+<div class="flex items-center gap-4">
+<div class="flex items-center text-gray-500 text-xs font-mono">
+<span class="hover:text-white cursor-pointer transition-colors">Organization</span>
+<span class="mx-2">/</span>
+<span class="text-white">Clusters</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<i class="w-4 h-4 text-gray-600 group-hover:text-primary transition-colors" data-lucide="search"></i>
+</div>
+<input class="bg-[#0A0A0C] border border-white/10 text-gray-300 text-xs rounded-md focus:ring-1 focus:ring-primary focus:border-primary block w-64 pl-9 p-2 placeholder-gray-600 font-mono transition-all" placeholder="Search clusters..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+<kbd class="inline-flex items-center border border-white/10 rounded px-1.5 text-[10px] font-sans font-medium text-gray-500">⌘K</kbd>
+</div>
+</div>
+<button class="p-2 text-gray-400 hover:text-white transition-colors relative">
+<i class="w-5 h-5" data-lucide="bell"></i>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-black"></span>
+</button>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-8 relative">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+<div>
+<h1 class="text-2xl font-bold text-white tracking-tight mb-1">Database Clusters</h1>
+<p class="text-gray-500 font-mono text-xs">Manage your database instances and replicas.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-xs font-medium text-white transition-colors flex items-center gap-2">
+<i class="w-3.5 h-3.5" data-lucide="filter"></i> Filter
+                    </button>
+<button class="px-4 py-2 glow-button rounded-md text-xs font-semibold text-white transition-all flex items-center gap-2">
+<i class="w-3.5 h-3.5" data-lucide="plus"></i> Create Cluster
+                    </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+<div class="minimal-card rounded-lg p-4 flex items-center justify-between">
+<div>
+<p class="text-[10px] uppercase font-mono text-gray-500 mb-1">Total Clusters</p>
+<p class="text-2xl font-bold text-white">12</p>
+</div>
+<div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-gray-400">
+<i class="w-5 h-5" data-lucide="server"></i>
+</div>
+</div>
+<div class="minimal-card rounded-lg p-4 flex items-center justify-between">
+<div>
+<p class="text-[10px] uppercase font-mono text-gray-500 mb-1">Healthy</p>
+<p class="text-2xl font-bold text-emerald-400">11</p>
+</div>
+<div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+<i class="w-5 h-5" data-lucide="activity"></i>
+</div>
+</div>
+<div class="minimal-card rounded-lg p-4 flex items-center justify-between">
+<div>
+<p class="text-[10px] uppercase font-mono text-gray-500 mb-1">Incidents</p>
+<p class="text-2xl font-bold text-amber-500">1</p>
+</div>
+<div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+<i class="w-5 h-5" data-lucide="alert-triangle"></i>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+<div class="minimal-card rounded-lg p-5 group flex flex-col h-full relative overflow-hidden">
+<div class="absolute top-0 right-0 p-5 opacity-0 group-hover:opacity-100 transition-opacity">
+<i class="w-5 h-5 text-gray-500 hover:text-white cursor-pointer" data-lucide="more-horizontal"></i>
+</div>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded border border-blue-500/20 bg-blue-500/10 flex items-center justify-center">
+<span class="text-blue-400 font-bold text-xs">PG</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-base font-semibold text-white group-hover:text-primary transition-colors">production-core</h3>
+<div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+</div>
+<p class="text-[10px] font-mono text-gray-500">id: pg_8291_prod</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-white/5 rounded px-3 py-2 border border-white/5">
+<span class="block text-[10px] font-mono text-gray-500 mb-0.5">Region</span>
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-gray-300">us-east-1</span>
+</div>
+</div>
+<div class="bg-white/5 rounded px-3 py-2 border border-white/5">
+<span class="block text-[10px] font-mono text-gray-500 mb-0.5">Version</span>
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-gray-300">v15.2</span>
+</div>
+</div>
+</div>
+<div class="mt-auto space-y-4">
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] font-mono text-gray-500 uppercase">CPU Usage</span>
+<span class="text-xs font-mono text-white">42%</span>
+</div>
+<div class="h-8 w-full relative border-b border-white/5">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 40">
+<path class="sparkline-path" d="M0 35 Q10 32 20 28 T40 25 T60 15 T80 20 T100 18" fill="none" stroke="#3b82f6" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M0 35 Q10 32 20 28 T40 25 T60 15 T80 20 T100 18 L100 40 L0 40 Z" fill="url(#grad1)" opacity="0.2" stroke="none"></path>
+<defs>
+<linearGradient id="grad1" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0"></stop>
+</linearGradient>
+</defs>
+</svg>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] font-mono text-gray-500 uppercase">Memory</span>
+<span class="text-xs font-mono text-white">1.2GB <span class="text-gray-600">/ 4GB</span></span>
+</div>
+<div class="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-purple-500 w-[30%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="minimal-card rounded-lg p-5 group flex flex-col h-full relative overflow-hidden border-amber-500/20">
+<div class="absolute top-0 right-0 p-5 opacity-0 group-hover:opacity-100 transition-opacity">
+<i class="w-5 h-5 text-gray-500 hover:text-white cursor-pointer" data-lucide="more-horizontal"></i>
+</div>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded border border-orange-500/20 bg-orange-500/10 flex items-center justify-center">
+<span class="text-orange-400 font-bold text-xs">MY</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-base font-semibold text-white group-hover:text-primary transition-colors">legacy-store-01</h3>
+<div class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>
+<span class="text-[9px] px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-500 uppercase font-mono">Degraded</span>
+</div>
+<p class="text-[10px] font-mono text-gray-500">id: my_1102_leg</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-white/5 rounded px-3 py-2 border border-white/5">
+<span class="block text-[10px] font-mono text-gray-500 mb-0.5">Region</span>
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-gray-300">eu-west-2</span>
+</div>
+</div>
+<div class="bg-white/5 rounded px-3 py-2 border border-white/5">
+<span class="block text-[10px] font-mono text-gray-500 mb-0.5">Version</span>
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-gray-300">v8.0</span>
+</div>
+</div>
+</div>
+<div class="mt-auto space-y-4">
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] font-mono text-gray-500 uppercase">CPU Usage</span>
+<span class="text-xs font-mono text-amber-500">89%</span>
+</div>
+<div class="h-8 w-full relative border-b border-white/5">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 40">
+<path class="sparkline-path" d="M0 25 L10 28 L20 20 L30 15 L40 18 L50 10 L60 8 L70 12 L80 5 L90 8 L100 5" fill="none" stroke="#f59e0b" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M0 25 L10 28 L20 20 L30 15 L40 18 L50 10 L60 8 L70 12 L80 5 L90 8 L100 5 L100 40 L0 40 Z" fill="url(#grad2)" opacity="0.2" stroke="none"></path>
+<defs>
+<linearGradient id="grad2" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0"></stop>
+</linearGradient>
+</defs>
+</svg>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] font-mono text-gray-500 uppercase">Memory</span>
+<span class="text-xs font-mono text-white">7.8GB <span class="text-gray-600">/ 8GB</span></span>
+</div>
+<div class="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-amber-500 w-[95%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="minimal-card rounded-lg p-5 group flex flex-col h-full relative overflow-hidden">
+<div class="absolute top-0 right-0 p-5 opacity-0 group-hover:opacity-100 transition-opacity">
+<i class="w-5 h-5 text-gray-500 hover:text-white cursor-pointer" data-lucide="more-horizontal"></i>
+</div>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded border border-blue-500/20 bg-blue-500/10 flex items-center justify-center">
+<span class="text-blue-400 font-bold text-xs">PG</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-base font-semibold text-white group-hover:text-primary transition-colors">staging-db</h3>
+<div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+</div>
+<p class="text-[10px] font-mono text-gray-500">id: pg_9921_stg</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-white/5 rounded px-3 py-2 border border-white/5">
+<span class="block text-[10px] font-mono text-gray-500 mb-0.5">Region</span>
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-gray-300">us-west-2</span>
+</div>
+</div>
+<div class="bg-white/5 rounded px-3 py-2 border border-white/5">
+<span class="block text-[10px] font-mono text-gray-500 mb-0.5">Version</span>
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-gray-300">v14.0</span>
+</div>
+</div>
+</div>
+<div class="mt-auto space-y-4">
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] font-mono text-gray-500 uppercase">CPU Usage</span>
+<span class="text-xs font-mono text-white">4%</span>
+</div>
+<div class="h-8 w-full relative border-b border-white/5">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 40">
+<path class="sparkline-path" d="M0 38 L10 39 L20 38 L30 35 L40 38 L50 37 L60 38 L70 39 L80 38 L90 38 L100 35" fill="none" stroke="#6b7280" stroke-linecap="round" stroke-width="1.5"></path>
+</svg>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] font-mono text-gray-500 uppercase">Memory</span>
+<span class="text-xs font-mono text-white">256MB <span class="text-gray-600">/ 2GB</span></span>
+</div>
+<div class="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-gray-600 w-[12%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="minimal-card rounded-lg p-5 group flex flex-col h-full relative overflow-hidden">
+<div class="absolute top-0 right-0 p-5 opacity-0 group-hover:opacity-100 transition-opacity">
+<i class="w-5 h-5 text-gray-500 hover:text-white cursor-pointer" data-lucide="more-horizontal"></i>
+</div>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded border border-red-500/20 bg-red-500/10 flex items-center justify-center">
+<span class="text-red-400 font-bold text-xs">RD</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-base font-semibold text-white group-hover:text-primary transition-colors">cache-cluster-primary</h3>
+<div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+</div>
+<p class="text-[10px] font-mono text-gray-500">id: rd_1102_main</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-white/5 rounded px-3 py-2 border border-white/5">
+<span class="block text-[10px] font-mono text-gray-500 mb-0.5">Region</span>
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-gray-300">ap-northeast-1</span>
+</div>
+</div>
+<div class="bg-white/5 rounded px-3 py-2 border border-white/5">
+<span class="block text-[10px] font-mono text-gray-500 mb-0.5">Version</span>
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-gray-300">v7.0</span>
+</div>
+</div>
+</div>
+<div class="mt-auto space-y-4">
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] font-mono text-gray-500 uppercase">CPU Usage</span>
+<span class="text-xs font-mono text-white">12%</span>
+</div>
+<div class="h-8 w-full relative border-b border-white/5">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 40">
+<path class="sparkline-path" d="M0 35 L20 35 L30 20 L40 35 L60 35 L70 25 L80 35 L100 35" fill="none" stroke="#ef4444" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M0 35 L20 35 L30 20 L40 35 L60 35 L70 25 L80 35 L100 35 L100 40 L0 40 Z" fill="url(#grad3)" opacity="0.2" stroke="none"></path>
+<defs>
+<linearGradient id="grad3" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#ef4444;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#ef4444;stop-opacity:0"></stop>
+</linearGradient>
+</defs>
+</svg>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] font-mono text-gray-500 uppercase">Memory</span>
+<span class="text-xs font-mono text-white">2.1GB <span class="text-gray-600">/ 4GB</span></span>
+</div>
+<div class="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-red-500 w-[52%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="rounded-lg border border-dashed border-white/10 p-5 flex flex-col items-center justify-center text-center hover:border-primary/50 hover:bg-white/[0.02] transition-all cursor-pointer h-full min-h-[300px]">
+<div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-400 mb-4 group-hover:text-primary transition-colors">
+<i class="w-6 h-6" data-lucide="plus"></i>
+</div>
+<h3 class="text-sm font-semibold text-white mb-1">Deploy New Cluster</h3>
+<p class="text-xs text-gray-500 max-w-[200px]">Launch a new high-availability database cluster in seconds.</p>
+</div>
+</div>
+</div>
+</main>
+<script>
+        lucide.createIcons();
+    </script>
+
+</body></html>

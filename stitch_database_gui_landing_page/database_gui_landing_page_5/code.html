@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Observability Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#000000", 
+                        surface: "#050505",
+                        primary: "#8b5cf6",
+                        secondary: "#3b82f6",
+                        accent: "#ec4899",
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "system-ui", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #e5e7eb;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .focused-glow-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #000000;
+            z-index: 0;
+            pointer-events: none;
+        }.focused-glow-bg::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(139, 92, 246, 0.18), transparent 60%);
+            filter: blur(80px);
+            opacity: 1;
+        }
+        .focused-glow-bg::after {
+            content: '';
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 900px;
+            height: 500px;
+            background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.1), transparent 70%);
+            filter: blur(100px);
+            opacity: 0.8;
+        }
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }.cmd-palette {
+            background: linear-gradient(180deg, rgba(20, 20, 25, 0.8) 0%, rgba(10, 10, 12, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 4px 30px -5px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 10px 20px -10px rgba(255,255,255,0.03);transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .cmd-palette:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 10px 40px -5px rgba(0, 0, 0, 0.9),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        .cmd-palette:focus-within {
+            background: rgba(15, 15, 20, 0.95);
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 
+                0 0 0 1px rgba(139, 92, 246, 0.4),
+                0 20px 50px -10px rgba(0, 0, 0, 1);
+        }
+        .dashboard-window {
+            background: #050505;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 0 0 1px rgba(0,0,0,1), 
+                0 20px 60px -10px rgba(0, 0, 0, 0.8);
+        }
+        .log-time { color: #52525b; font-family: 'JetBrains Mono', monospace; font-size: 10px;}
+        .log-info { color: #3b82f6; font-weight: 600; }
+        .log-warn { color: #f59e0b; font-weight: 600; }
+        .log-error { color: #ef4444; font-weight: 600; }
+        .log-success { color: #22c55e; font-weight: 600; }
+        .log-string { color: #a5b4fc; }
+        .log-keyword { color: #d8b4fe; }
+        .logs-scroll::-webkit-scrollbar { width: 4px; }
+        .logs-scroll::-webkit-scrollbar-track { background: transparent; }
+        .logs-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .logs-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+        .chart-grid-line { stroke: rgba(255,255,255,0.05); }
+        .chart-text { fill: #52525b; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+        .dashboard-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #71717a;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-left: 2px solid transparent;
+        }
+        .dashboard-nav-item:hover {
+            color: #d4d4d8;
+            background: rgba(255,255,255,0.03);
+        }
+        .dashboard-nav-item.active {
+            color: #fff;
+            background: rgba(139, 92, 246, 0.05);
+            border-left-color: #8b5cf6;
+        }
+        @keyframes fadeInSlide { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-in { animation: fadeInSlide 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative selection:bg-primary/30 selection:text-white">
+<div class="focused-glow-bg"></div>
+<nav class="w-full z-50 py-4 px-6 fixed top-0 glass-panel">
+<div class="max-w-[1600px] mx-auto flex items-center justify-between">
+<div class="flex items-center gap-10">
+<a class="flex items-center gap-3 group" href="#">
+<div class="w-8 h-8 rounded bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-300">
+<svg class="text-white w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="font-mono font-bold text-sm tracking-tight text-white group-hover:text-primary transition-colors">Nexus<span class="text-gray-600">Obs</span></span>
+</a>
+<div class="hidden md:flex items-center gap-8 text-xs font-mono font-medium text-gray-500">
+<a class="hover:text-gray-300 transition-colors" href="#">Overview</a>
+<a class="text-white transition-colors" href="#">Observability</a>
+<a class="hover:text-gray-300 transition-colors" href="#">Insights</a>
+<a class="hover:text-gray-300 transition-colors" href="#">Alerts</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-xs font-mono text-gray-500 bg-white/5 px-2 py-1 rounded border border-white/5">
+<div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+<span>System Normal</span>
+</div>
+<button class="bg-white text-black px-4 py-1.5 rounded text-xs font-bold font-mono hover:bg-gray-200 transition-colors">
+                    Dashboard
+                </button>
+</div>
+</div>
+</nav>
+<main class="flex-grow z-10 flex flex-col items-center pt-32 pb-20 px-4 w-full mx-auto max-w-[1600px]">
+<div class="text-center max-w-4xl mx-auto mb-12 relative z-10 animate-in">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/20 text-[10px] font-mono text-primary-300 mb-6 backdrop-blur-sm">
+<span class="text-primary">●</span>
+<span>Live Metrics</span>
+</div>
+<h1 class="text-5xl md:text-6xl font-bold tracking-tight mb-4 text-white">
+                Observability Dashboard
+            </h1>
+<p class="text-gray-500 max-w-xl mx-auto font-light font-mono text-sm leading-relaxed">
+                Real-time throughput, latency, and error tracking for your high-performance database clusters.
+            </p>
+</div>
+<div class="w-full max-w-2xl mb-12 relative z-20 animate-in delay-100">
+<div class="relative flex items-center cmd-palette rounded-lg px-4 py-3.5 cursor-text group">
+<svg class="w-4 h-4 text-gray-500 group-hover:text-primary transition-colors mr-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<input class="bg-transparent border-none outline-none text-sm font-mono text-white placeholder-gray-600 flex-grow focus:ring-0 p-0" placeholder="Search metrics, logs, traces or type '&gt;' for commands..." type="text"/>
+<div class="flex items-center gap-1.5 px-2 py-1 rounded bg-[#1A1A1E] border border-white/10 text-[10px] font-mono text-gray-500 shadow-sm group-hover:border-primary/30 transition-colors">
+<span>⌘</span><span>K</span>
+</div>
+</div>
+</div>
+<div class="w-full relative animate-in delay-200">
+<div class="dashboard-window rounded-xl overflow-hidden flex flex-col h-[750px] relative z-10">
+<div class="h-10 border-b border-white/5 flex items-center justify-between px-4 bg-[#0a0a0a]">
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 rounded-full bg-[#27272a] hover:bg-red-500/50 transition-colors"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-[#27272a] hover:bg-yellow-500/50 transition-colors"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-[#27272a] hover:bg-green-500/50 transition-colors"></div>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 rounded bg-black/40 border border-white/5 min-w-[300px] justify-center">
+<svg class="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="text-[11px] font-mono text-gray-500">app.nexus.db/observability/primary-cluster</span>
+</div>
+<div class="w-16"></div> 
+</div>
+<div class="flex flex-1 overflow-hidden">
+<div class="w-[220px] hidden lg:flex border-r border-white/5 bg-[#050505] flex-col py-4 px-3 gap-1">
+<div class="text-[10px] font-mono text-gray-600 uppercase tracking-wider mb-2 px-3">Platform</div>
+<div class="dashboard-nav-item">
+<i class="w-4 h-4" data-lucide="layout-grid"></i>
+<span>Overview</span>
+</div>
+<div class="dashboard-nav-item">
+<i class="w-4 h-4" data-lucide="database"></i>
+<span>Database</span>
+</div>
+<div class="dashboard-nav-item">
+<i class="w-4 h-4" data-lucide="shield"></i>
+<span>Auth</span>
+</div>
+<div class="dashboard-nav-item">
+<i class="w-4 h-4" data-lucide="zap"></i>
+<span>Edge Functions</span>
+</div>
+<div class="dashboard-nav-item">
+<i class="w-4 h-4" data-lucide="hard-drive"></i>
+<span>Storage</span>
+</div>
+<div class="text-[10px] font-mono text-gray-600 uppercase tracking-wider mb-2 mt-6 px-3">Monitoring</div>
+<div class="dashboard-nav-item active">
+<i class="w-4 h-4 text-primary" data-lucide="activity"></i>
+<span class="text-white font-medium">Observability</span>
+</div>
+<div class="dashboard-nav-item">
+<i class="w-4 h-4" data-lucide="scroll-text"></i>
+<span>Logs</span>
+</div>
+<div class="dashboard-nav-item">
+<i class="w-4 h-4" data-lucide="bell"></i>
+<span>Alerts</span>
+</div>
+<div class="mt-auto pt-4 border-t border-white/5">
+<div class="dashboard-nav-item">
+<i class="w-4 h-4" data-lucide="settings"></i>
+<span>Settings</span>
+</div>
+</div>
+</div>
+<div class="flex-1 bg-[#020202] flex flex-col relative overflow-hidden">
+<div class="h-14 border-b border-white/5 flex items-center justify-between px-6 bg-[#030303]">
+<h2 class="text-sm font-semibold text-white flex items-center gap-2">
+<span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                Live Metrics
+                            </h2>
+<div class="flex items-center gap-3">
+<div class="flex items-center bg-white/5 rounded border border-white/5 p-0.5">
+<button class="px-3 py-1 text-[10px] font-mono text-white bg-white/10 rounded-sm">1H</button>
+<button class="px-3 py-1 text-[10px] font-mono text-gray-500 hover:text-white transition">24H</button>
+<button class="px-3 py-1 text-[10px] font-mono text-gray-500 hover:text-white transition">7D</button>
+</div>
+<button class="p-1.5 text-gray-400 hover:text-white border border-white/10 rounded hover:bg-white/5">
+<i class="w-3.5 h-3.5" data-lucide="refresh-cw"></i>
+</button>
+</div>
+</div>
+<div class="flex-1 p-6 overflow-y-auto">
+<div class="mb-6 bg-[#060606] border border-white/10 rounded-lg p-5 relative group">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-xs font-mono text-gray-400 uppercase tracking-wide">Throughput (RPS)</h3>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-2xl font-bold text-white font-mono">4,892</span>
+<span class="text-xs text-green-500 font-mono">▲ 12%</span>
+</div>
+</div>
+<div class="text-[10px] font-mono text-gray-600">Last 60 mins</div>
+</div>
+<div class="h-64 w-full relative">
+<svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+<line class="chart-grid-line" x1="0" x2="100%" y1="25%" y2="25%"></line>
+<line class="chart-grid-line" x1="0" x2="100%" y1="50%" y2="50%"></line>
+<line class="chart-grid-line" x1="0" x2="100%" y1="75%" y2="75%"></line>
+<defs>
+<linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"></stop>
+</linearGradient>
+</defs>
+<path d="M0 200 C 50 180, 100 220, 150 150 C 200 80, 250 120, 300 100 C 350 80, 400 140, 450 130 C 500 120, 550 60, 600 80 C 650 100, 700 150, 750 140 C 800 130, 850 40, 900 60 C 950 80, 1000 50, 1100 40 L 1100 256 L 0 256 Z" fill="url(#chartGradient)" stroke="none"></path>
+<path d="M0 200 C 50 180, 100 220, 150 150 C 200 80, 250 120, 300 100 C 350 80, 400 140, 450 130 C 500 120, 550 60, 600 80 C 650 100, 700 150, 750 140 C 800 130, 850 40, 900 60 C 950 80, 1000 50, 1100 40" fill="none" stroke="#8b5cf6" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-[#060606] border border-white/10 rounded-lg p-4 hover:border-primary/40 transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-3">
+<h4 class="text-[11px] font-mono text-gray-400 uppercase">Latency (P99)</h4>
+<i class="w-3.5 h-3.5 text-blue-500" data-lucide="clock"></i>
+</div>
+<div class="text-2xl font-bold text-white font-mono mb-2">24<span class="text-sm text-gray-500">ms</span></div>
+<div class="h-10 w-full">
+<svg class="w-full h-full" preserveAspectRatio="none">
+<path d="M0 35 L10 32 L20 34 L30 25 L40 28 L50 20 L60 22 L70 15 L80 18 L90 10 L100 25" fill="none" stroke="#3b82f6" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+<div class="bg-[#060606] border border-white/10 rounded-lg p-4 hover:border-red-500/40 transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-3">
+<h4 class="text-[11px] font-mono text-gray-400 uppercase">Error Rate</h4>
+<i class="w-3.5 h-3.5 text-red-500" data-lucide="alert-triangle"></i>
+</div>
+<div class="text-2xl font-bold text-white font-mono mb-2">0.02<span class="text-sm text-gray-500">%</span></div>
+<div class="h-10 w-full">
+<svg class="w-full h-full" preserveAspectRatio="none">
+<path d="M0 35 L20 38 L40 38 L60 38 L70 20 L80 38 L100 38" fill="none" stroke="#ef4444" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+<div class="bg-[#060606] border border-white/10 rounded-lg p-4 hover:border-purple-500/40 transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-3">
+<h4 class="text-[11px] font-mono text-gray-400 uppercase">Pool Saturation</h4>
+<i class="w-3.5 h-3.5 text-purple-500" data-lucide="server"></i>
+</div>
+<div class="text-2xl font-bold text-white font-mono mb-2">82<span class="text-sm text-gray-500">%</span></div>
+<div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-4">
+<div class="h-full bg-purple-500 w-[82%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="w-[300px] border-l border-white/5 bg-[#030303] hidden xl:flex flex-col">
+<div class="h-10 flex items-center justify-between px-4 border-b border-white/5 bg-[#050505]">
+<span class="text-[10px] font-mono font-semibold text-gray-400 uppercase tracking-wider">Live Events</span>
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span class="text-[10px] font-mono text-primary">Tailing</span>
+</div>
+</div>
+<div class="flex-1 p-3 overflow-y-auto logs-scroll font-mono text-[10px] leading-relaxed space-y-3">
+<div class="flex flex-col gap-1 pb-2 border-b border-white/[0.03]">
+<div class="flex justify-between opacity-50">
+<span class="log-time">14:02:45.023</span>
+<span class="log-info">INFO</span>
+</div>
+<div class="text-gray-300">
+                                    Query executed <span class="log-string">"SELECT * FROM users"</span>
+<span class="block text-gray-500 mt-0.5">Duration: 45ms</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 pb-2 border-b border-white/[0.03]">
+<div class="flex justify-between opacity-50">
+<span class="log-time">14:02:46.112</span>
+<span class="log-warn">WARN</span>
+</div>
+<div class="text-gray-300">
+                                    High memory usage detected on <span class="log-keyword">worker-04</span>
+<span class="block text-yellow-500/70 mt-0.5">Heap: 92%</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 pb-2 border-b border-white/[0.03]">
+<div class="flex justify-between opacity-50">
+<span class="log-time">14:02:48.550</span>
+<span class="log-success">OK</span>
+</div>
+<div class="text-gray-300">
+                                    Autoscaler scaled up <span class="log-string">replica-set-1</span>
+<span class="block text-green-500/70 mt-0.5">+2 nodes added</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 pb-2 border-b border-white/[0.03]">
+<div class="flex justify-between opacity-50">
+<span class="log-time">14:03:01.002</span>
+<span class="log-error">ERR</span>
+</div>
+<div class="text-gray-300">
+                                    Connection timeout <span class="log-string">10.0.4.202</span>
+<span class="block text-red-400/70 mt-0.5">Retrying (2/5)...</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 pb-2 border-b border-white/[0.03]">
+<div class="flex justify-between opacity-50">
+<span class="log-time">14:03:02.105</span>
+<span class="log-info">INFO</span>
+</div>
+<div class="text-gray-300">
+                                    Cache invalidated <span class="log-keyword">key:user:8829</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 pb-2 border-b border-white/[0.03]">
+<div class="flex justify-between opacity-50">
+<span class="log-time">14:03:04.220</span>
+<span class="log-info">HTTP</span>
+</div>
+<div class="text-gray-300">
+                                    GET /api/v2/metrics 200 OK
+                                </div>
+</div>
+<div class="text-center py-2 opacity-30 text-[9px] hover:opacity-100 cursor-pointer transition-opacity">
+                                Load older events...
+                            </div>
+</div>
+</div>
+</div>
+</div>
+<div class="absolute -bottom-10 left-10 right-10 h-20 bg-primary/20 blur-[60px] pointer-events-none z-0"></div>
+</div>
+</main>
+<script>
+        lucide.createIcons();
+    </script>
+
+</body></html>

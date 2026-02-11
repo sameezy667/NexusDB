@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Documentation Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#0c0c0e", 
+                        surface: "#18181b",
+                        primary: "#8b5cf6",
+                        secondary: "#3b82f6",
+                        accent: "#ec4899",
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "system-ui", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            background-color: #0c0c0e;
+            color: #d4d4d8;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-header {
+            background: rgba(12, 12, 14, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }.code-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+        .code-scroll::-webkit-scrollbar-track { background: transparent; }
+        .code-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+        .code-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }.prose h1 { color: #fff; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 1.5rem; font-size: 2.25rem; line-height: 1.1; }
+        .prose h2 { color: #f4f4f5; font-weight: 600; margin-top: 3rem; margin-bottom: 1rem; font-size: 1.5rem; letter-spacing: -0.015em; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
+        .prose h3 { color: #e4e4e7; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; font-size: 1.25rem; }
+        .prose p { margin-bottom: 1.25rem; line-height: 1.75; color: #a1a1aa; }
+        .prose a { color: #8b5cf6; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+        .prose a:hover { border-bottom-color: #8b5cf6; }
+        .prose strong { color: #fff; font-weight: 600; }
+        .prose code { color: #e9d5ff; background: rgba(139, 92, 246, 0.1); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.875em; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        .prose pre { background: transparent; padding: 0; margin: 0; }
+        .nav-item { border-left: 2px solid transparent; color: #a1a1aa; transition: all 0.2s; }
+        .nav-item:hover { color: #f4f4f5; border-left-color: rgba(255,255,255,0.2); }
+        .nav-item.active { color: #8b5cf6; border-left-color: #8b5cf6; background: linear-gradient(to right, rgba(139,92,246,0.1), transparent); }
+        .toc-link { border-left: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; }
+        .toc-link:hover { border-left-color: #a1a1aa; color: #f4f4f5; }
+        .toc-link.active { border-left-color: #8b5cf6; color: #8b5cf6; font-weight: 500; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-primary/30 selection:text-white">
+<nav class="fixed top-0 w-full z-50 glass-header h-16">
+<div class="max-w-[1440px] mx-auto px-6 h-full flex items-center justify-between">
+<div class="flex items-center gap-8">
+<a class="flex items-center gap-2.5 group" href="#">
+<div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 text-primary group-hover:bg-primary/20 transition-colors">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<span class="font-bold text-white tracking-tight text-lg">Nexus<span class="text-gray-500 font-normal">Docs</span></span>
+</a>
+<div class="hidden md:flex items-center gap-1.5 bg-[#18181b] border border-white/10 rounded-md px-3 py-1.5 text-sm text-gray-500 hover:border-white/20 hover:text-gray-300 transition-colors cursor-pointer w-72 group">
+<span class="material-symbols-outlined text-[18px] text-gray-600 group-hover:text-gray-400">search</span>
+<span>Search documentation...</span>
+<span class="ml-auto text-[10px] font-mono bg-white/5 px-1.5 py-0.5 rounded border border-white/5 text-gray-500">CTRL K</span>
+</div>
+</div>
+<div class="flex items-center gap-6 text-sm font-medium">
+<a class="text-white hover:text-primary transition-colors" href="#">Documentation</a>
+<a class="text-gray-400 hover:text-white transition-colors" href="#">API Reference</a>
+<a class="text-gray-400 hover:text-white transition-colors" href="#">Blog</a>
+<div class="h-4 w-px bg-white/10"></div>
+<div class="flex items-center gap-3">
+<a class="text-gray-400 hover:text-white transition-colors" href="#">
+<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg>
+</a>
+<button class="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-3 py-1.5 rounded text-xs font-mono font-bold transition-all">
+                        v2.4.0
+                    </button>
+</div>
+</div>
+</div>
+</nav>
+<div class="max-w-[1440px] mx-auto w-full px-6 pt-24 pb-20 grid grid-cols-1 lg:grid-cols-[260px_1fr_240px] gap-10 relative">
+<aside class="hidden lg:block sticky top-24 h-[calc(100vh-8rem)] overflow-y-auto pr-4 pb-10">
+<div class="space-y-8">
+<div>
+<h5 class="text-xs font-bold text-white uppercase tracking-wider mb-3 pl-3">Getting Started</h5>
+<ul class="space-y-0.5 text-sm">
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Introduction</a></li>
+<li><a class="nav-item active block pl-3 py-1.5 rounded-r font-medium" href="#">Quickstart</a></li>
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Installation</a></li>
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Architecture</a></li>
+</ul>
+</div>
+<div>
+<h5 class="text-xs font-bold text-white uppercase tracking-wider mb-3 pl-3">Database</h5>
+<ul class="space-y-0.5 text-sm">
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Schema Design</a></li>
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Migrations</a></li>
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Query Builder</a></li>
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Indexing</a></li>
+</ul>
+</div>
+<div>
+<h5 class="text-xs font-bold text-white uppercase tracking-wider mb-3 pl-3">Real-time</h5>
+<ul class="space-y-0.5 text-sm">
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Subscriptions</a></li>
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Presence</a></li>
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Broadcast</a></li>
+</ul>
+</div>
+<div>
+<h5 class="text-xs font-bold text-white uppercase tracking-wider mb-3 pl-3">Platform</h5>
+<ul class="space-y-0.5 text-sm">
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Auth &amp; RLS</a></li>
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Edge Functions</a></li>
+<li><a class="nav-item block pl-3 py-1.5 hover:bg-white/5 rounded-r" href="#">Storage</a></li>
+</ul>
+</div>
+</div>
+</aside>
+<main class="min-w-0 flex-1 prose prose-invert prose-headings:scroll-mt-28 max-w-none">
+<div class="mb-10">
+<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-6">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span>Updated for v2.4</span>
+</div>
+<h1>Quickstart Guide</h1>
+<p class="lead text-lg text-gray-400 font-light">
+                    Set up a production-ready NexusDB instance in less than 2 minutes. Connect your application and start streaming data with real-time sync capabilities.
+                </p>
+</div>
+<h2 id="installation">Installation</h2>
+<p>
+                NexusDB is distributed as a single binary or a Docker container. For local development, we recommend using the CLI tool which handles local orchestration and environment variables automatically.
+            </p>
+<div class="my-8 rounded-lg overflow-hidden border border-white/10 bg-[#08080a] shadow-2xl ring-1 ring-black/50">
+<div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-[#121214]">
+<div class="flex gap-1.5">
+<div class="w-3 h-3 rounded-full bg-[#2a2a2e] border border-white/5"></div>
+<div class="w-3 h-3 rounded-full bg-[#2a2a2e] border border-white/5"></div>
+<div class="w-3 h-3 rounded-full bg-[#2a2a2e] border border-white/5"></div>
+</div>
+<div class="text-xs text-gray-500 font-mono tracking-tight">bash — terminal</div>
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+<div class="p-5 font-mono text-[13px] overflow-x-auto code-scroll leading-relaxed">
+<div class="flex">
+<span class="text-gray-700 select-none mr-4 w-4 text-right">1</span>
+<div class="flex-1"><span class="text-pink-400">npm</span><span class="text-gray-300"> install -g nexus-cli</span></div>
+</div>
+<div class="flex">
+<span class="text-gray-700 select-none mr-4 w-4 text-right">2</span>
+<div class="flex-1"><span class="text-pink-400">nexus</span><span class="text-gray-300"> init my-project --template=typescript</span></div>
+</div>
+<div class="flex mt-2 opacity-60">
+<span class="text-gray-700 select-none mr-4 w-4 text-right">3</span>
+<div class="flex-1 text-gray-400 italic"># Initialize a new local cluster</div>
+</div>
+<div class="flex">
+<span class="text-gray-700 select-none mr-4 w-4 text-right">4</span>
+<div class="flex-1"><span class="text-pink-400">nexus</span><span class="text-gray-300"> dev</span></div>
+</div>
+<div class="flex mt-3 pl-8 text-gray-400 border-l-2 border-primary/20 ml-2">
+<div class="py-1">
+<div><span class="text-green-400">➜</span>  Local:   http://localhost:3000</div>
+<div><span class="text-green-400">➜</span>  Console: http://localhost:5432</div>
+<div><span class="text-blue-400">ℹ</span>  Ready in 34ms</div>
+</div>
+</div>
+</div>
+</div>
+<h2 id="connecting">Connecting the Client</h2>
+<p>
+                Once your instance is running, you can connect using the JavaScript client. NexusDB uses WebSockets for real-time updates and falls back to HTTP/2 for standard requests. The client handles reconnection logic automatically.
+            </p>
+<div class="bg-blue-900/10 border border-blue-500/20 rounded-lg p-4 my-6 flex gap-3.5">
+<span class="material-symbols-outlined text-blue-400 shrink-0 mt-0.5">info</span>
+<div class="text-sm text-blue-200/80">
+<strong class="text-blue-100 block mb-1">Type Safety</strong>
+                    NexusDB automatically generates TypeScript definitions for your database schema. Run <code class="bg-blue-900/30 text-blue-100 border-0">nexus gen types</code> to sync your local `d.ts` files.
+                </div>
+</div>
+<div class="my-8 rounded-lg overflow-hidden border border-white/10 bg-[#08080a] shadow-2xl ring-1 ring-black/50 group">
+<div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-[#121214]">
+<span class="text-xs text-gray-400 font-mono">src/db.ts</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-yellow-500/50"></span>
+<span class="text-[10px] text-gray-500 font-mono">TypeScript</span>
+</div>
+</div>
+<div class="p-5 font-mono text-[13px] overflow-x-auto code-scroll leading-relaxed">
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">1</span><span class="text-accent">import</span><span class="text-gray-300"> { createClient } </span><span class="text-accent">from</span><span class="text-green-400"> '@nexus/client'</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">2</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">3</span><span class="text-gray-500">// Initialize with your project URL and public key</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">4</span><span class="text-accent">const</span><span class="text-blue-400"> nexus</span><span class="text-gray-300"> = createClient(</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">5</span><span class="text-gray-300 pl-4">process.env.NEXUS_URL,</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">6</span><span class="text-gray-300 pl-4">process.env.NEXUS_ANON_KEY</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">7</span><span class="text-gray-300">)</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">8</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">9</span><span class="text-gray-500">// Subscribe to real-time changes on the 'users' table</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">10</span><span class="text-blue-400">nexus</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">11</span><span class="text-purple-400 pl-4">.from</span><span class="text-gray-300">(</span><span class="text-green-400">'users'</span><span class="text-gray-300">)</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">12</span><span class="text-purple-400 pl-4">.on</span><span class="text-gray-300">(</span><span class="text-green-400">'INSERT'</span><span class="text-gray-300">, (payload) </span><span class="text-accent">=&gt;</span><span class="text-gray-300"> {</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">13</span><span class="text-yellow-300 pl-8">console</span><span class="text-gray-300">.log(</span><span class="text-green-400">'New user:'</span><span class="text-gray-300">, payload.new)</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">14</span><span class="text-gray-300 pl-4">})</span></div>
+<div class="flex"><span class="text-gray-700 w-8 select-none text-right pr-4">15</span><span class="text-purple-400 pl-4">.subscribe</span><span class="text-gray-300">()</span></div>
+</div>
+</div>
+<h2 id="next-steps">Next Steps</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose mt-8">
+<a class="group p-5 rounded-lg border border-white/10 bg-white/[0.02] hover:border-primary/50 transition-all hover:bg-white/[0.04]" href="#">
+<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition-transform border border-primary/10">
+<span class="material-symbols-outlined">rocket_launch</span>
+</div>
+<h4 class="text-white font-semibold mb-2">Platform Tour</h4>
+<p class="text-sm text-gray-500 leading-relaxed">Learn the basics of the dashboard, data browser, and CLI tools.</p>
+</a>
+<a class="group p-5 rounded-lg border border-white/10 bg-white/[0.02] hover:border-accent/50 transition-all hover:bg-white/[0.04]" href="#">
+<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center text-accent mb-4 group-hover:scale-105 transition-transform border border-accent/10">
+<span class="material-symbols-outlined">integration_instructions</span>
+</div>
+<h4 class="text-white font-semibold mb-2">API Reference</h4>
+<p class="text-sm text-gray-500 leading-relaxed">Deep dive into authentication endpoints, parameters, and errors.</p>
+</a>
+</div>
+<div class="h-20"></div>
+</main>
+<aside class="hidden xl:block sticky top-24 h-[calc(100vh-8rem)]">
+<div class="pl-6 border-l border-white/5 h-full flex flex-col">
+<h5 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">On this page</h5>
+<ul class="space-y-3 text-[13px]">
+<li><a class="toc-link pl-3 block text-gray-400 hover:text-white" href="#installation">Installation</a></li>
+<li><a class="toc-link pl-3 block text-gray-400 hover:text-white" href="#connecting">Connecting the Client</a></li>
+<li><a class="toc-link pl-3 block text-gray-400 hover:text-white" href="#next-steps">Next Steps</a></li>
+</ul>
+<div class="mt-10 pt-8 border-t border-white/5">
+<h5 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">Resources</h5>
+<ul class="space-y-3 text-[13px]">
+<li><a class="text-gray-400 hover:text-primary transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[16px]">bug_report</span> Report an Issue
+                        </a></li>
+<li><a class="text-gray-400 hover:text-primary transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[16px]">forum</span> Community Forum
+                        </a></li>
+<li><a class="text-gray-400 hover:text-primary transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[16px]">history</span> Changelog
+                        </a></li>
+</ul>
+</div>
+<div class="mt-auto p-4 rounded-lg bg-gradient-to-b from-[#121214] to-transparent border border-white/5">
+<p class="text-xs text-gray-300 mb-3 font-medium">Need enterprise support?</p>
+<button class="w-full py-2 px-3 rounded bg-white/5 hover:bg-white/10 text-white text-xs font-semibold border border-white/10 transition-colors">
+                        Contact Sales
+                    </button>
+</div>
+</div>
+</aside>
+</div>
+<script>
+        lucide.createIcons();
+    </script>
+
+</body></html>
