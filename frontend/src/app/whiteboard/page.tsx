@@ -20,15 +20,7 @@ const nodeTypes = {
   databaseNode: DatabaseNode,
 };
 
-const getApiUrl = () => {
-  let url = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
-  if (!url.startsWith("http")) {
-    url = `https://${url}`;
-  }
-  return url.replace(/\/$/, ""); // Remove trailing slash if present
-};
-
-const API_URL = getApiUrl();
+const API_URL = "";
 
 interface HistoryItem {
   id: string;
