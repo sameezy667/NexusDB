@@ -21,7 +21,7 @@ const nodeTypes = {
 };
 
 const getApiUrl = () => {
-  let url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  let url = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim();
   if (!url.startsWith("http")) {
     url = `https://${url}`;
   }
