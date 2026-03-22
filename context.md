@@ -140,6 +140,8 @@ bun run dev
 - **Headers:** `X-Frame-Options`, `X-Content-Type-Options`, `HSTS` enforced.
 - **Privacy:** No user data or images are stored on disk; processed in-memory.
 ## 8. Technical Debt
+- [x] Fix CORS preflight error handling with Railway backend.
+- [x] Resilient API Url fetching `trim` padding error on Vercel deployment.
 - [ ] Implement robust error handling for edge cases in graph transformation.
 - [ ] Add unit tests for `services.py` transformation logic.
 - [x] Implement local schema persistence (Saved via localStorage).
