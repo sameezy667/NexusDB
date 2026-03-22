@@ -66,7 +66,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no code 
           "type": "VARCHAR(255)",
           "is_primary_key": false,
           "is_foreign_key": false,
-          "foreign_key_target": null
+          "foreign_key_target": ""
         }
       ]
     }
@@ -75,13 +75,15 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no code 
     {
       "source_table": "table1",
       "target_table": "table2",
-      "type": "one-to-many"
+      "type": "1:N",
+      "source_column": "id",
+      "target_column": "table1_id"
     }
   ],
   "sql_code": "CREATE TABLE ..."
 }
 
-Use snake_case for all identifiers. For foreign_key_target, use null if not a foreign key."""
+Use snake_case for all identifiers. For foreign_key_target, use "" if not a foreign key."""
 
         # Simplified config without response_schema
         generation_config = genai.GenerationConfig(
@@ -99,8 +101,11 @@ Use snake_case for all identifiers. For foreign_key_target, use null if not a fo
             generation_config=generation_config
         )
 
+        # Clean up possible markdown wrapping from LLM
+        clean_json = response.text.replace("```json", "").replace("```", "").strip()
+        
         # Parse and validate manually
-        extraction = SchemaExtraction.model_validate_json(response.text)
+        extraction = SchemaExtraction.model_validate_json(clean_json)
         
         # Sanitize the generated SQL code
         extraction.sql_code = bleach.clean(extraction.sql_code, tags=[], attributes={}, strip=True)
