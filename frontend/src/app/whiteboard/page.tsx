@@ -104,7 +104,7 @@ export default function WhiteboardPage() {
       }
 
       if (!res.ok) {
-        throw new Error(data?.message || `Error ${res.status}: ${data?.error || res.statusText}`);
+        throw new Error(data?.details || data?.message || `Error ${res.status}: ${data?.error || res.statusText}`);
       }
 
       // Update State

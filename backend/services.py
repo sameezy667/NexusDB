@@ -104,8 +104,31 @@ Use snake_case for all identifiers. For foreign_key_target, use "" if not a fore
         # Clean up possible markdown wrapping from LLM
         clean_json = response.text.replace("```json", "").replace("```", "").strip()
         
-        # Parse and validate manually
-        extraction = SchemaExtraction.model_validate_json(clean_json)
+        # Manually parse string to dict for pre-processing
+        raw_dict = json.loads(clean_json)
+        
+        # Sanitize against Pydantic strict-mode ValidationErrors (extra="forbid")
+        for t in raw_dict.get("tables", []):
+            for k in list(t.keys()):
+                if k not in ["name", "columns"]: del t[k]
+            for c in t.get("columns", []):
+                for k in list(c.keys()):
+                    if k not in ["name", "type", "is_primary_key", "is_foreign_key", "foreign_key_target"]: del c[k]
+                    
+        for r in raw_dict.get("relationships", []):
+            for k in list(r.keys()):
+                if k not in ["source_table", "target_table", "type", "source_column", "target_column"]: del r[k]
+                
+            # Normalize relationship type Literal
+            if "type" in r:
+                r_type = str(r["type"]).upper().replace("-", ":").replace("TO", ":").replace("ONE", "1").replace("MANY", "N").replace(" ", "")
+                r["type"] = r_type if r_type in ["1:1", "1:N", "N:M"] else "1:N"
+
+        for k in list(raw_dict.keys()):
+            if k not in ["tables", "relationships", "sql_code"]: del raw_dict[k]
+            
+        # Validate against strict models.py constraints
+        extraction = SchemaExtraction.model_validate(raw_dict)
         
         # Sanitize the generated SQL code
         extraction.sql_code = bleach.clean(extraction.sql_code, tags=[], attributes={}, strip=True)
