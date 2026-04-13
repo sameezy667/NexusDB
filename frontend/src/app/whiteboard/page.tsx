@@ -12,17 +12,23 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import Editor from '@monaco-editor/react';
-import { Upload, FileCode, Maximize, RefreshCw, Loader2, Plus, Sparkles, AlertCircle, X, History, Trash2, Download, Database, ChevronDown, CloudUpload } from 'lucide-react';
+import { Upload, FileCode, Maximize, RefreshCw, Loader2, Plus, Sparkles, AlertCircle, X, History, Trash2, Download, Database, ChevronDown, CloudUpload, Copy } from 'lucide-react';
 import DatabaseNode from '@/components/DatabaseNode';
 import DeployToSupabaseModal from '@/components/DeployToSupabaseModal';
 import DeployToFirebaseModal from '@/components/DeployToFirebaseModal';
+import DialectSelector, { DIALECT_BACKEND_MAP } from '@/components/DialectSelector';
+import ValidationPanel from '@/components/ValidationPanel';
+import NodeEditModal from '@/components/NodeEditModal';
+import MigrationGenerator from '@/components/MigrationGenerator';
 import { motion, AnimatePresence } from "framer-motion";
+import { generateSQL, Schema } from '@/lib/generateSQL';
+import { downloadSQL } from '@/lib/downloadSQL';
 
 const nodeTypes = {
   databaseNode: DatabaseNode,
 };
 
-const API_URL = "";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface HistoryItem {
   id: string;
@@ -49,6 +55,9 @@ export default function WhiteboardPage() {
   const [showSupabaseModal, setShowSupabaseModal] = useState(false);
   const [showFirebaseModal, setShowFirebaseModal] = useState(false);
   const [rawSchema, setRawSchema] = useState<any>(null);
+  const [editingNode, setEditingNode] = useState<{ id: string; schema: any } | null>(null);
+  const [editedNodes, setEditedNodes] = useState<Set<string>>(new Set());
+  const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
 
   // Load history on mount
   useEffect(() => {
@@ -89,9 +98,15 @@ export default function WhiteboardPage() {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("dialect", dialect);
+    // Map frontend dialect to backend-supported dialect
+    const backendDialect = DIALECT_BACKEND_MAP[dialect] || "postgresql";
+    formData.append("dialect", backendDialect);
 
     try {
+      if (!API_URL) {
+        throw new Error("Backend API URL is not configured. Please set NEXT_PUBLIC_API_URL in your .env.local file.");
+      }
+
       const res = await fetch(`${API_URL}/api/generate`, {
         method: "POST",
         body: formData,
@@ -115,13 +130,28 @@ export default function WhiteboardPage() {
       // Update State
       setNodes(data.graph_data.nodes);
       setEdges(data.graph_data.edges);
-      setSqlCode(data.sql_code);
+      
+      // If dialect is not natively supported by backend, regenerate SQL on frontend
+      const backendDialect = DIALECT_BACKEND_MAP[dialect] || "postgresql";
+      if (dialect !== backendDialect && data.raw_schema) {
+        const regeneratedSQL = generateSQL(data.raw_schema, dialect);
+        setSqlCode(regeneratedSQL);
+      } else {
+        setSqlCode(data.sql_code);
+      }
+      
       setRawSchema(data.raw_schema);
       setHasGenerated(true);
+      setEditedNodes(new Set()); // Reset edited nodes on new generation
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "An unexpected error occurred. Please try again.");
+      // Better error message for connection issues
+      if (err.message.includes("fetch") || err.message.includes("NetworkError") || err.name === "TypeError") {
+        setError(`Cannot connect to backend server at ${API_URL}. Please ensure the FastAPI backend is running on port 8000.`);
+      } else {
+        setError(err.message || "An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsUploading(false);
     }
@@ -168,10 +198,11 @@ export default function WhiteboardPage() {
     if (!hasGenerated || !sqlCode) return;
     setIsGeneratingData(true);
     try {
+      const backendDialect = DIALECT_BACKEND_MAP[dialect] || "postgresql";
       const res = await fetch(`${API_URL}/api/generate-data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sql_code: sqlCode, dialect, count: 10 })
+        body: JSON.stringify({ sql_code: sqlCode, dialect: backendDialect, count: 10 })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to generate mock data");
@@ -183,6 +214,63 @@ export default function WhiteboardPage() {
       setError(err.message || "Failed to generate data");
     } finally {
       setIsGeneratingData(false);
+    }
+  };
+
+  // Handle node double-click for editing
+  const handleNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    if (node.data?.schema) {
+      setEditingNode({ id: node.id, schema: node.data.schema });
+    }
+  }, []);
+
+  // Handle saving edited node
+  const handleSaveNodeEdit = useCallback((updatedSchema: any) => {
+    if (!editingNode) return;
+
+    // Update the node in React Flow
+    setNodes((nds) =>
+      nds.map((node) =>
+        node.id === editingNode.id
+          ? { ...node, data: { ...node.data, label: updatedSchema.name, schema: updatedSchema } }
+          : node
+      )
+    );
+
+    // Mark node as edited
+    setEditedNodes((prev) => new Set(prev).add(editingNode.id));
+
+    // Update rawSchema
+    if (rawSchema) {
+      const updatedTables = rawSchema.tables.map((table: any) =>
+        table.name === editingNode.schema.name ? updatedSchema : table
+      );
+      const newSchema = { ...rawSchema, tables: updatedTables };
+      setRawSchema(newSchema);
+
+      // Regenerate SQL from updated schema
+      const newSQL = generateSQL(newSchema, dialect);
+      setSqlCode(newSQL);
+    }
+
+    setEditingNode(null);
+  }, [editingNode, rawSchema, dialect]);
+
+  // Download SQL handler
+  const handleDownloadSQL = () => {
+    downloadSQL(sqlCode, dialect);
+    setDownloadMessage("Downloaded!");
+    setTimeout(() => setDownloadMessage(null), 2000);
+  };
+
+  // Copy SQL to clipboard
+  const handleCopySQL = async () => {
+    try {
+      await navigator.clipboard.writeText(sqlCode);
+      setSuccessMessage("SQL copied to clipboard!");
+      setTimeout(() => setSuccessMessage(null), 2000);
+    } catch (err) {
+      setError("Failed to copy to clipboard");
     }
   };
 
@@ -308,19 +396,7 @@ export default function WhiteboardPage() {
           <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">Sketch-to-SQL Engine</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="relative group">
-            <select
-              value={dialect}
-              onChange={(e) => setDialect(e.target.value)}
-              className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-md py-2 pl-3 pr-8 text-xs font-medium text-white transition-colors focus:outline-none focus:ring-1 focus:ring-primary/50"
-            >
-              <option value="postgresql">PostgreSQL</option>
-              <option value="mysql">MySQL</option>
-              <option value="sqlite">SQLite</option>
-              <option value="mssql">SQL Server</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+          <DialectSelector value={dialect} onChange={setDialect} />
           <button
             onClick={() => setShowHistory(true)}
             className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-xs font-medium text-white transition-colors flex items-center gap-2"
@@ -414,6 +490,7 @@ export default function WhiteboardPage() {
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
+                onNodeDoubleClick={handleNodeDoubleClick}
                 nodeTypes={nodeTypes}
                 connectionMode={ConnectionMode.Loose}
                 fitView
@@ -434,6 +511,39 @@ export default function WhiteboardPage() {
               <span className="text-[10px] font-mono text-gray-400 uppercase tracking-tighter">Generated DDL Source</span>
             </div>
             <div className="flex items-center gap-2">
+              {hasGenerated && (
+                <>
+                  <button
+                    onClick={handleCopySQL}
+                    className="text-[9px] px-2 py-1 rounded border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors uppercase font-mono flex items-center gap-1"
+                    title="Copy SQL"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={handleDownloadSQL}
+                      className="text-[9px] px-2 py-1 rounded border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors uppercase font-mono flex items-center gap-1"
+                      title="Download SQL"
+                    >
+                      <Download className="w-3 h-3" />
+                      SQL
+                    </button>
+                    <AnimatePresence>
+                      {downloadMessage && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute top-full mt-1 right-0 px-2 py-1 bg-green-500/20 border border-green-500/40 rounded text-[9px] text-green-300 whitespace-nowrap"
+                        >
+                          {downloadMessage}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </>
+              )}
               <button
                 onClick={handleGenerateMockData}
                 disabled={!hasGenerated || isGeneratingData}
@@ -443,17 +553,25 @@ export default function WhiteboardPage() {
                 Mock Data
               </button>
               <span className="text-[9px] px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary uppercase font-mono shadow-[0_0_15px_rgba(139,92,246,0.15)]">
-                {dialect === 'postgresql' ? 'PostgreSQL 16' : dialect.toUpperCase()}
+                {dialect.toUpperCase()}
               </span>
             </div>
           </div>
           
+          {/* Validation Panel */}
+          {hasGenerated && (
+            <div className="px-4 py-3 border-b border-white/5 bg-[#0A0A0C]">
+              <ValidationPanel schema={rawSchema} />
+            </div>
+          )}
+
           {/* Export / Deploy Section */}
           {hasGenerated && (
             <div className="px-4 py-3 border-b border-white/5 bg-[#0A0A0C]">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Export / Deploy</span>
                 <div className="flex items-center gap-2">
+                  <MigrationGenerator currentSchema={rawSchema} dialect={dialect} apiUrl={API_URL} />
                   <button
                     onClick={() => setShowSupabaseModal(true)}
                     className="text-[9px] px-2.5 py-1.5 rounded-md border border-[#3ecf8e]/30 bg-[#3ecf8e]/10 text-[#3ecf8e] hover:bg-[#3ecf8e]/20 transition-colors uppercase font-mono flex items-center gap-1.5"
@@ -512,6 +630,17 @@ export default function WhiteboardPage() {
         schema={rawSchema}
         apiUrl={API_URL}
       />
+
+      {/* Node Edit Modal */}
+      {editingNode && (
+        <NodeEditModal
+          isOpen={!!editingNode}
+          onClose={() => setEditingNode(null)}
+          tableSchema={editingNode.schema}
+          onSave={handleSaveNodeEdit}
+          position={{ x: 0, y: 0 }}
+        />
+      )}
     </div>
   );
 }
