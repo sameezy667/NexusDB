@@ -43,17 +43,24 @@ export default function MigrationGenerator({ currentSchema, dialect, apiUrl }: M
     formData.append("dialect", dialect);
 
     try {
-      if (!apiUrl) {
-        throw new Error("API URL is not configured. Please check your environment variables.");
+      // BUG FIX 1: Use NEXT_PUBLIC_API_URL from environment variable
+      const base = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+      if (!base) {
+        throw new Error("API URL is not configured. Please set NEXT_PUBLIC_API_URL in your .env.local file.");
       }
 
-      const res = await fetch(`${apiUrl}/api/generate`, {
+      const res = await fetch(`${base}/api/generate`, {
         method: "POST",
         body: formData,
       });
 
+      // BUG FIX 2: Check response.ok before parsing JSON
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Request failed (${res.status}): ${text.slice(0, 200)}`);
+      }
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to extract schema");
 
       setOldSchema(data.raw_schema);
       const migrationResult = generateMigration(data.raw_schema, currentSchema, dialect);
