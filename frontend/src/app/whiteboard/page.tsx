@@ -12,8 +12,10 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import Editor from '@monaco-editor/react';
-import { Upload, FileCode, Maximize, RefreshCw, Loader2, Plus, Sparkles, AlertCircle, X, History, Trash2, Download, Database, ChevronDown } from 'lucide-react';
+import { Upload, FileCode, Maximize, RefreshCw, Loader2, Plus, Sparkles, AlertCircle, X, History, Trash2, Download, Database, ChevronDown, CloudUpload } from 'lucide-react';
 import DatabaseNode from '@/components/DatabaseNode';
+import DeployToSupabaseModal from '@/components/DeployToSupabaseModal';
+import DeployToFirebaseModal from '@/components/DeployToFirebaseModal';
 import { motion, AnimatePresence } from "framer-motion";
 
 const nodeTypes = {
@@ -44,6 +46,9 @@ export default function WhiteboardPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [dialect, setDialect] = useState<string>("postgresql");
   const [isGeneratingData, setIsGeneratingData] = useState(false);
+  const [showSupabaseModal, setShowSupabaseModal] = useState(false);
+  const [showFirebaseModal, setShowFirebaseModal] = useState(false);
+  const [rawSchema, setRawSchema] = useState<any>(null);
 
   // Load history on mount
   useEffect(() => {
@@ -111,6 +116,7 @@ export default function WhiteboardPage() {
       setNodes(data.graph_data.nodes);
       setEdges(data.graph_data.edges);
       setSqlCode(data.sql_code);
+      setRawSchema(data.raw_schema);
       setHasGenerated(true);
 
     } catch (err: any) {
@@ -441,6 +447,33 @@ export default function WhiteboardPage() {
               </span>
             </div>
           </div>
+          
+          {/* Export / Deploy Section */}
+          {hasGenerated && (
+            <div className="px-4 py-3 border-b border-white/5 bg-[#0A0A0C]">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Export / Deploy</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowSupabaseModal(true)}
+                    className="text-[9px] px-2.5 py-1.5 rounded-md border border-[#3ecf8e]/30 bg-[#3ecf8e]/10 text-[#3ecf8e] hover:bg-[#3ecf8e]/20 transition-colors uppercase font-mono flex items-center gap-1.5"
+                    aria-label="Deploy to Supabase"
+                  >
+                    <CloudUpload className="w-3 h-3" />
+                    Supabase
+                  </button>
+                  <button
+                    onClick={() => setShowFirebaseModal(true)}
+                    className="text-[9px] px-2.5 py-1.5 rounded-md border border-[#FFA000]/30 bg-[#FFA000]/10 text-[#FFA000] hover:bg-[#FFA000]/20 transition-colors uppercase font-mono flex items-center gap-1.5"
+                    aria-label="Deploy to Firebase"
+                  >
+                    <CloudUpload className="w-3 h-3" />
+                    Firebase
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="flex-1 bg-[#050505] relative pt-2">
             <Editor
               height="100%"
@@ -465,6 +498,20 @@ export default function WhiteboardPage() {
         </div>
 
       </motion.div>
+
+      {/* Deployment Modals */}
+      <DeployToSupabaseModal
+        isOpen={showSupabaseModal}
+        onClose={() => setShowSupabaseModal(false)}
+        sqlCode={sqlCode}
+        apiUrl={API_URL}
+      />
+      <DeployToFirebaseModal
+        isOpen={showFirebaseModal}
+        onClose={() => setShowFirebaseModal(false)}
+        schema={rawSchema}
+        apiUrl={API_URL}
+      />
     </div>
   );
 }

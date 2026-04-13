@@ -18,12 +18,16 @@ from slowapi.errors import RateLimitExceeded
 load_dotenv()
 
 from services import generate_schema_from_image, transform_to_graph_data, generate_mock_data
+from deploy_routes import router as deploy_router, limiter as deploy_limiter
 
 # Initialize Rate Limiter
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Whiteboard Architect API")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Include deployment routes
+app.include_router(deploy_router)
 
 # CORS Configuration
 ALLOWED_ORIGINS = [url.strip().rstrip('/') for url in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")]

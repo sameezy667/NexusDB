@@ -1,0 +1,47 @@
+500: AI Schema Generation failed: 3 validation errors for SchemaExtraction
+relationships.0.type
+  Input should be '1:1', '1:N' or 'N:M' [type=literal_error, input_value='many-to-one', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/literal_error
+relationships.0.source_column
+  Field required [type=missing, input_value={'source_table': 'peaks',..., 'type': 'many-to-one'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+relationships.0.target_column
+  Field required [type=missing, input_value={'source_table': 'peaks',..., 'type': 'many-to-one'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+
+Traceback (most recent call last):
+  File "C:\Visual Studio Code\PBL-SQL\backend\services.py", line 103, in generate_schema_from_image
+  File "C:\Users\samee\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\main.py", line 746, in model_validate_json
+    return cls.__pydantic_validator__.validate_json(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+pydantic_core._pydantic_core.ValidationError: 3 validation errors for SchemaExtraction
+relationships.0.type
+  Input should be '1:1', '1:N' or 'N:M' [type=literal_error, input_value='many-to-one', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/literal_error
+relationships.0.source_column
+  Field required [type=missing, input_value={'source_table': 'peaks',..., 'type': 'many-to-one'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+relationships.0.target_column
+  Field required [type=missing, input_value={'source_table': 'peaks',..., 'type': 'many-to-one'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 9, in <module>
+    extraction = services.generate_schema_from_image(img_bytes, 'image/jpeg')
+  File "C:\Visual Studio Code\PBL-SQL\backend\services.py", line 114, in generate_schema_from_image
+fastapi.exceptions.HTTPException: 500: AI Schema Generation failed: 3 validation errors for SchemaExtraction
+relationships.0.type
+  Input should be '1:1', '1:N' or 'N:M' [type=literal_error, input_value='many-to-one', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/literal_error
+relationships.0.source_column
+  Field required [type=missing, input_value={'source_table': 'peaks',..., 'type': 'many-to-one'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+relationships.0.target_column
+  Field required [type=missing, input_value={'source_table': 'peaks',..., 'type': 'many-to-one'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing

@@ -6,3 +6,5 @@ pydantic
 python-dotenv
 slowapi
 bleach
+httpx==0.27.0
+firebase-admin==6.5.0
