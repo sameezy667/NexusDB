@@ -9,33 +9,11 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Sparkles, Image as ImageIcon, Code2, Database, Zap, ArrowRight, Layers, MousePointer2, Upload, FileCode } from "lucide-react";
 import Link from "next/link";
-import { useRef, useState, useEffect } from "react";
-import Lottie from "lottie-react";
-
-// AI Analysis Lottie JSON URL (High-reliability CDN)
-const AI_ANALYSIS_LOTTIE = "https://assets10.lottiefiles.com/packages/lf20_vnikbeve.json";
+import { useRef } from "react";
 
 export default function Dashboard() {
     const containerRef = useRef(null);
-    const [lottieData, setLottieData] = useState<any>(null);
 
-    // Fetch Lottie JSON
-    useEffect(() => {
-        fetch(AI_ANALYSIS_LOTTIE)
-            .then(res => {
-                if (!res.ok) throw new Error("Failed to load animation");
-                const contentType = res.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    throw new Error("Response is not JSON");
-                }
-                return res.json();
-            })
-            .then(data => setLottieData(data))
-            .catch(err => {
-                console.warn("Lottie load failed:", err.message);
-                setLottieData(null);
-            });
-    }, []);
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end start"]
@@ -286,16 +264,7 @@ export default function Dashboard() {
                                 className="w-24 h-24 rounded-3xl bg-[#0A0A0C] border border-white/5 flex items-center justify-center mb-8 relative group-hover:border-primary/50 transition-all shadow-2xl overflow-hidden"
                             >
                                 <span className="absolute -top-3 -right-3 text-[10px] font-mono font-bold bg-primary text-white px-2 py-1 rounded italic z-10">{step.step}</span>
-                                {step.step === "02" && lottieData ? (
-                                    <div className="w-20 h-20 opacity-80 scale-150">
-                                        <Lottie
-                                            animationData={lottieData}
-                                            loop={true}
-                                        />
-                                    </div>
-                                ) : (
-                                    <step.icon className="w-10 h-10 text-gray-500 group-hover:text-primary transition-colors" />
-                                )}
+                                <step.icon className="w-10 h-10 text-gray-500 group-hover:text-primary transition-colors" />
                             </motion.div>
                             <h3 className="text-xl font-bold text-white mb-3">{step.title}</h3>
                             <p className="text-sm text-gray-500 leading-relaxed max-w-[200px]">{step.desc}</p>
