@@ -103,8 +103,8 @@ export default function WhiteboardPage() {
     formData.append("dialect", backendDialect);
 
     try {
-      if (!API_URL) {
-        throw new Error("Backend API URL is not configured. Please set NEXT_PUBLIC_API_URL in your .env.local file.");
+      if (!API_URL || API_URL.trim() === "") {
+        throw new Error("Backend API URL is not configured. Please set NEXT_PUBLIC_API_URL in your .env.local file (local) or in your deployment environment variables.");
       }
 
       const res = await fetch(`${API_URL}/api/generate`, {
@@ -198,14 +198,23 @@ export default function WhiteboardPage() {
     if (!hasGenerated || !sqlCode) return;
     setIsGeneratingData(true);
     try {
+      if (!API_URL || API_URL.trim() === "") {
+        throw new Error("Backend API URL is not configured. Please set NEXT_PUBLIC_API_URL environment variable.");
+      }
+
       const backendDialect = DIALECT_BACKEND_MAP[dialect] || "postgresql";
       const res = await fetch(`${API_URL}/api/generate-data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sql_code: sqlCode, dialect: backendDialect, count: 10 })
       });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Request failed (${res.status}): ${text.slice(0, 200)}`);
+      }
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to generate mock data");
 
       setSqlCode(prev => prev + "\n\n-- Mock Data\n" + data.sql_code);
       setSuccessMessage("Mock data generated!");
