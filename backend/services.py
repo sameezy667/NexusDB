@@ -6,7 +6,7 @@
 
 import os
 import json
-import google.generativeai as genai
+from google import genai
 import bleach
 from fastapi import HTTPException
 from models import SchemaExtraction, GenerateDataRequest
@@ -18,7 +18,6 @@ def get_api_key():
 def configure_genai():
     key = get_api_key()
     if key:
-        genai.configure(api_key=key)
         # Masked print for debugging
         masked_key = f"{key[:6]}...{key[-4:]}" if len(key) > 10 else "****"
         print(f"INFO: Gemini configured with key {masked_key}")
@@ -33,14 +32,16 @@ def generate_schema_from_image(file_bytes: bytes, mime_type: str, dialect: str =
     Sends the image to Gemini 1.5 Flash and extracts the database schema.
     Returns a validated SchemaExtraction Pydantic model.
     """
-    if not get_api_key():
+    api_key = get_api_key()
+    if not api_key:
         raise HTTPException(
             status_code=500, 
             detail="GEMINI_API_KEY is not configured on the server."
         )
 
     try:
-        model = genai.GenerativeModel("gemini-flash-latest")
+        # Initialize client with API key
+        client = genai.Client(api_key=api_key)
         
         system_instructions = (
             f"You are an expert SQL Architect. Convert hand-drawn whiteboard schema sketches "
@@ -85,20 +86,18 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no code 
 
 Use snake_case for all identifiers. For foreign_key_target, use "" if not a foreign key."""
 
-        # Simplified config without response_schema
-        generation_config = genai.GenerationConfig(
-            response_mime_type="application/json",
-            temperature=0.1,
-        )
-        
-        # Try standard Part object structure if simple dict fails
-        response = model.generate_content(
-            [
-                system_instructions, 
-                prompt, 
+        # Generate content using new SDK
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-exp",
+            contents=[
+                system_instructions,
+                prompt,
                 {"mime_type": mime_type, "data": file_bytes}
             ],
-            generation_config=generation_config
+            config={
+                "response_mime_type": "application/json",
+                "temperature": 0.1,
+            }
         )
 
         # Clean up possible markdown wrapping from LLM
@@ -145,11 +144,13 @@ def generate_mock_data(request: GenerateDataRequest) -> str:
     """
     Generates mock data (INSERT statements) for the given SQL schema.
     """
-    if not get_api_key():
+    api_key = get_api_key()
+    if not api_key:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured.")
 
     try:
-        model = genai.GenerativeModel("gemini-flash-latest")
+        # Initialize client with API key
+        client = genai.Client(api_key=api_key)
         
         prompt = (
             f"Generate {request.count} valid INSERT statements for the following {request.dialect} schema. "
@@ -158,7 +159,13 @@ def generate_mock_data(request: GenerateDataRequest) -> str:
             f"Schema:\n{request.sql_code}"
         )
 
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-exp",
+            contents=[prompt],
+            config={
+                "temperature": 0.3,
+            }
+        )
         
         # Cleanup
         sql = bleach.clean(response.text, tags=[], attributes={}, strip=True)
