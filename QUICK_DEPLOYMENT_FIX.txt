@@ -1,0 +1,175 @@
+╔══════════════════════════════════════════════════════════════╗
+║         DEPLOYMENT 404 ERROR - QUICK FIX GUIDE               ║
+╚══════════════════════════════════════════════════════════════╝
+
+🔴 ERROR YOU'RE SEEING:
+   "Failed to load resource: the server responded with a status of 404"
+   "Error: Server responded with 404"
+
+🎯 ROOT CAUSE:
+   NEXT_PUBLIC_API_URL environment variable is NOT SET in deployment
+
+═══════════════════════════════════════════════════════════════
+
+✅ QUICK FIX (3 Steps):
+
+┌──────────────────────────────────────────────────────────────┐
+│ STEP 1: Set Environment Variable in Deployment Platform     │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│ VERCEL:                                                      │
+│   1. Go to project → Settings → Environment Variables       │
+│   2. Add new variable:                                       │
+│      Name:  NEXT_PUBLIC_API_URL                             │
+│      Value: https://your-backend.herokuapp.com              │
+│   3. Click Save                                              │
+│                                                              │
+│ NETLIFY:                                                     │
+│   1. Site Settings → Environment Variables                  │
+│   2. Add variable:                                           │
+│      Key:   NEXT_PUBLIC_API_URL                             │
+│      Value: https://your-backend.herokuapp.com              │
+│   3. Click Save                                              │
+│                                                              │
+│ RAILWAY:                                                     │
+│   1. Project → Variables tab                                │
+│   2. Add variable:                                           │
+│      Variable: NEXT_PUBLIC_API_URL                          │
+│      Value:    https://your-backend.herokuapp.com           │
+│   3. Auto-redeploys                                          │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ STEP 2: Trigger New Deployment                              │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│ ⚠️  IMPORTANT: Environment variables are baked in at build  │
+│     time. You MUST redeploy after setting the variable.     │
+│                                                              │
+│ VERCEL:   Deployments → ... → Redeploy                      │
+│ NETLIFY:  Deploys → Trigger deploy → Deploy site            │
+│ RAILWAY:  Automatic (no action needed)                      │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ STEP 3: Verify It's Working                                 │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│ 1. Open your deployed site                                  │
+│ 2. Open browser console (F12)                               │
+│ 3. Type: console.log(process.env.NEXT_PUBLIC_API_URL)       │
+│ 4. Should show: "https://your-backend.com"                  │
+│    NOT: undefined or ""                                     │
+│                                                              │
+│ 5. Test upload:                                              │
+│    - Go to /whiteboard                                       │
+│    - Upload an image                                         │
+│    - Should generate schema (no 404)                         │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+
+📋 CHECKLIST:
+
+□ Backend is deployed and accessible
+  Test: curl https://your-backend.com/
+  Should return: {"message": "Whiteboard Architect API"}
+
+□ Environment variable is named EXACTLY: NEXT_PUBLIC_API_URL
+  (Must have NEXT_PUBLIC_ prefix)
+
+□ Backend URL has NO trailing slash
+  ✅ GOOD: https://backend.com
+  ❌ BAD:  https://backend.com/
+
+□ Variable is set in DEPLOYMENT PLATFORM
+  (NOT just in .env.local file)
+
+□ Triggered a NEW DEPLOYMENT after setting variable
+
+□ Verified variable in browser console
+
+□ Tested upload functionality
+
+═══════════════════════════════════════════════════════════════
+
+❌ COMMON MISTAKES:
+
+1. Only set in .env.local
+   → .env.local is for LOCAL development only
+   → Must set in deployment platform
+
+2. Forgot to redeploy
+   → Env vars are baked in at build time
+   → Always redeploy after changing env vars
+
+3. Wrong variable name
+   → Must be: NEXT_PUBLIC_API_URL
+   → Check spelling and NEXT_PUBLIC_ prefix
+
+4. Backend not deployed
+   → Deploy backend FIRST
+   → Verify it's accessible
+   → Then set frontend env var
+
+═══════════════════════════════════════════════════════════════
+
+🔍 DEBUGGING:
+
+If still getting 404 after following steps:
+
+1. Check browser console:
+   console.log(process.env.NEXT_PUBLIC_API_URL)
+   
+   If shows undefined or "":
+   → Variable not set correctly
+   → Check deployment platform settings
+   → Redeploy
+
+2. Check Network tab (F12 → Network):
+   
+   If you see: /api/generate (relative path)
+   → Environment variable not set
+   
+   Should see: https://your-backend.com/api/generate (absolute)
+   → Environment variable is set correctly
+
+3. Test backend directly:
+   curl https://your-backend.com/docs
+   
+   If fails:
+   → Backend is not deployed or not accessible
+   → Deploy backend first
+
+═══════════════════════════════════════════════════════════════
+
+💡 WHY IT BROKE:
+
+Recent commits improved error handling and validation.
+This EXPOSED that the environment variable wasn't set.
+
+The commits didn't break anything - they revealed an
+existing configuration issue.
+
+═══════════════════════════════════════════════════════════════
+
+📚 MORE HELP:
+
+- DEPLOYMENT_ENV_SETUP.md     → Detailed platform guides
+- DEPLOYMENT_404_FIX.md        → Complete explanation
+- BUG_FIXES_MIGRATION_GENERATOR.md → Recent changes
+
+═══════════════════════════════════════════════════════════════
+
+✅ AFTER THE FIX:
+
+Your app will:
+✅ Connect to backend correctly
+✅ Generate schemas successfully
+✅ Show clear error messages if backend is down
+✅ Work in both local and production environments
+
+═══════════════════════════════════════════════════════════════
