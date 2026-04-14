@@ -88,7 +88,7 @@ Use snake_case for all identifiers. For foreign_key_target, use "" if not a fore
 
         # Generate content using new SDK
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model="gemini-2.0-flash",
             contents=[
                 system_instructions,
                 prompt,
@@ -160,7 +160,7 @@ def generate_mock_data(request: GenerateDataRequest) -> str:
         )
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model="gemini-2.0-flash",
             contents=[prompt],
             config={
                 "temperature": 0.3,
