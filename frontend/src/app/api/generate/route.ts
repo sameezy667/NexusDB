@@ -1,31 +1,18 @@
 /**
  * @file route.ts
  * @description Server-side proxy for POST /api/generate.
- *   Reads the private BACKEND_API_URL env var at runtime (never exposed to
- *   the browser) and forwards the multipart/form-data request to the FastAPI
- *   backend running on Railway (or any other host).
- *
- *   Why a Route Handler instead of next.config.ts rewrites?
- *   - Rewrites bake the destination URL at *build time*. If the env var isn't
- *     present during the Vercel build the URL falls back to localhost:8000,
- *     which is unreachable from Vercel's servers → 404.
- *   - Route Handlers execute on the *server at request time*, so BACKEND_API_URL
- *     is always resolved from the live Vercel environment variables.
- *
+ *   Reads BACKEND_API_URL (or NEXT_PUBLIC_API_URL as fallback) at runtime and
+ *   forwards the multipart/form-data request to the FastAPI backend.
  * @module frontend/api/generate
  */
 
 import { NextRequest, NextResponse } from "next/server";
-
-const BACKEND_URL = (
-  process.env.BACKEND_API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8000"
-).replace(/\/$/, "");
+import { getBackendUrl } from "../_lib/backend";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const BACKEND_URL = getBackendUrl();
   try {
-    if (!BACKEND_URL || BACKEND_URL.trim() === "") {
+    if (!BACKEND_URL) {
       return NextResponse.json(
         {
           error: "misconfiguration",

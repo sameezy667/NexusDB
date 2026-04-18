@@ -6,14 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-
-const BACKEND_URL = (
-  process.env.BACKEND_API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8000"
-).replace(/\/$/, "");
+import { getBackendUrl } from "../../_lib/backend";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const BACKEND_URL = getBackendUrl();
   try {
     const body = await req.json();
 
