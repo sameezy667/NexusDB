@@ -86,13 +86,15 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no code 
 
 Use snake_case for all identifiers. For foreign_key_target, use "" if not a foreign key."""
 
+        from google.genai import types
+
         # Generate content using new SDK
         response = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[
                 system_instructions,
                 prompt,
-                {"mime_type": mime_type, "data": file_bytes}
+                types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
             ],
             config={
                 "response_mime_type": "application/json",
