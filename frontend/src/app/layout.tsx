@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} min-h-screen w-screen bg-[#020202] text-sm antialiased selection:bg-primary/30 selection:text-white overflow-x-hidden`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} min-h-screen w-full bg-[#020202] text-sm antialiased selection:bg-primary/30 selection:text-white overflow-x-hidden`}>
         {/* Global Background Glow */}
         <div className="fixed inset-0 z-0 pointer-events-none">
           <div className="absolute top-[20%] left-[20%] w-[800px] h-[800px] bg-purple-900/5 rounded-full blur-[150px]"></div>
