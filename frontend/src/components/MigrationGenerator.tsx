@@ -43,13 +43,9 @@ export default function MigrationGenerator({ currentSchema, dialect, apiUrl }: M
     formData.append("dialect", dialect);
 
     try {
-      // BUG FIX 1: Use NEXT_PUBLIC_API_URL from environment variable
-      const base = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
-      if (!base) {
-        throw new Error("API URL is not configured. Please set NEXT_PUBLIC_API_URL in your .env.local file.");
-      }
-
-      const res = await fetch(`${base}/api/generate`, {
+      // Use a relative URL — the Next.js Route Handler at /api/generate
+      // proxies to the backend server-side (reads BACKEND_API_URL at runtime).
+      const res = await fetch("/api/generate", {
         method: "POST",
         body: formData,
       });

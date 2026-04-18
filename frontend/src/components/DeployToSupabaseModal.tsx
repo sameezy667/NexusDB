@@ -36,7 +36,7 @@ export default function DeployToSupabaseModal({
     setMessage("");
 
     try {
-      const response = await fetch(`${apiUrl}/deploy/supabase`, {
+      const response = await fetch(`/api/deploy/supabase`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

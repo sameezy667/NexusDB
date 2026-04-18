@@ -28,7 +28,9 @@ const nodeTypes = {
   databaseNode: DatabaseNode,
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+// NOTE: API calls now go through Next.js server-side Route Handlers
+// at /api/generate and /api/generate-data (same-origin relative URLs).
+// The Route Handlers proxy to BACKEND_API_URL at runtime on the server.
 
 interface HistoryItem {
   id: string;
@@ -103,11 +105,10 @@ export default function WhiteboardPage() {
     formData.append("dialect", backendDialect);
 
     try {
-      if (!API_URL || API_URL.trim() === "") {
-        throw new Error("Backend API URL is not configured. Please set NEXT_PUBLIC_API_URL in your .env.local file (local) or in your deployment environment variables.");
-      }
-
-      const res = await fetch(`${API_URL}/api/generate`, {
+      // Use a relative URL — the Next.js Route Handler at /api/generate
+      // proxies to the backend server-side, so CORS and absolute URLs
+      // are not a concern here.
+      const res = await fetch("/api/generate", {
         method: "POST",
         body: formData,
       });
@@ -148,7 +149,7 @@ export default function WhiteboardPage() {
       console.error(err);
       // Better error message for connection issues
       if (err.message.includes("fetch") || err.message.includes("NetworkError") || err.name === "TypeError") {
-        setError(`Cannot connect to backend server at ${API_URL}. Please ensure the FastAPI backend is running on port 8000.`);
+        setError("Cannot connect to the backend server. Please ensure the backend is running and BACKEND_API_URL is correctly set in Vercel.");
       } else {
         setError(err.message || "An unexpected error occurred. Please try again.");
       }
@@ -198,12 +199,8 @@ export default function WhiteboardPage() {
     if (!hasGenerated || !sqlCode) return;
     setIsGeneratingData(true);
     try {
-      if (!API_URL || API_URL.trim() === "") {
-        throw new Error("Backend API URL is not configured. Please set NEXT_PUBLIC_API_URL environment variable.");
-      }
-
       const backendDialect = DIALECT_BACKEND_MAP[dialect] || "postgresql";
-      const res = await fetch(`${API_URL}/api/generate-data`, {
+      const res = await fetch("/api/generate-data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sql_code: sqlCode, dialect: backendDialect, count: 10 })
@@ -580,7 +577,7 @@ export default function WhiteboardPage() {
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Export / Deploy</span>
                 <div className="flex items-center gap-2">
-                  <MigrationGenerator currentSchema={rawSchema} dialect={dialect} apiUrl={API_URL} />
+                  <MigrationGenerator currentSchema={rawSchema} dialect={dialect} apiUrl="" />
                   <button
                     onClick={() => setShowSupabaseModal(true)}
                     className="text-[9px] px-2.5 py-1.5 rounded-md border border-[#3ecf8e]/30 bg-[#3ecf8e]/10 text-[#3ecf8e] hover:bg-[#3ecf8e]/20 transition-colors uppercase font-mono flex items-center gap-1.5"
@@ -631,13 +628,13 @@ export default function WhiteboardPage() {
         isOpen={showSupabaseModal}
         onClose={() => setShowSupabaseModal(false)}
         sqlCode={sqlCode}
-        apiUrl={API_URL}
+        apiUrl=""
       />
       <DeployToFirebaseModal
         isOpen={showFirebaseModal}
         onClose={() => setShowFirebaseModal(false)}
         schema={rawSchema}
-        apiUrl={API_URL}
+        apiUrl=""
       />
 
       {/* Node Edit Modal */}

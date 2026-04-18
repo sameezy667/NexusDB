@@ -35,8 +35,12 @@ The UI follows a premium "Brutalist" design system with smooth Framer Motion ani
 │   └── .env                # GEMINI_API_KEY
 ├── frontend/               # Next.js Frontend
 │   ├── src/app/            # App Router (Home, Whiteboard, Settings)
+│   ├── src/app/api/        # Server-side proxy Route Handlers (reads BACKEND_API_URL at runtime)
+│   │   ├── generate/       # Proxies POST /api/generate → FastAPI
+│   │   ├── generate-data/  # Proxies POST /api/generate-data → FastAPI
+│   │   └── deploy/         # Proxies /deploy/supabase, /deploy/firebase → FastAPI
 │   ├── src/components/     # UI Components (DatabaseNode, Stitch System)
-│   ├── .env.local          # NEXT_PUBLIC_API_URL
+│   ├── .env.local          # BACKEND_API_URL (private) or NEXT_PUBLIC_API_URL (legacy)
 │   └── tailwind.config.ts  # Design Tokens
 └── context.md              # Single Source of Truth
 ```
@@ -100,8 +104,10 @@ bun run dev
 ### Frontend (Vercel)
 1. **Import Project:** Import the same GitHub repo in Vercel.
 2. **Root Directory:** Set Root Directory to `/frontend`.
-3. **Environment Variables:**
-   - `NEXT_PUBLIC_API_URL`: The **https** URL of your Railway backend (e.g., `https://web-production-1234.up.railway.app`).
+3. **Environment Variables (CRITICAL):**
+   - `BACKEND_API_URL`: The **https** URL of your Railway backend (e.g., `https://web-production-1234.up.railway.app`).
+   - This is a **private** server-side variable — do NOT prefix with `NEXT_PUBLIC_`.
+   - The Next.js API Route Handlers in `src/app/api/` read this at **runtime** (not build time).
 4. **Deploy:** Click Deploy.
 
 ### Post-Deployment
@@ -142,6 +148,7 @@ bun run dev
 ## 8. Technical Debt
 - [x] Fix CORS preflight error handling with Railway backend.
 - [x] Resilient API Url fetching `trim` padding error on Vercel deployment.
+- [x] **Root-cause fix: 404 on /api/generate in production** — replaced `next.config.ts` rewrites (which baked `NEXT_PUBLIC_API_URL` at *build time*, silently falling back to `localhost:8000`) with server-side Next.js Route Handlers in `src/app/api/*/route.ts` that read `BACKEND_API_URL` at **request time**.
 - [ ] Implement robust error handling for edge cases in graph transformation.
 - [ ] Add unit tests for `services.py` transformation logic.
 - [x] Implement local schema persistence (Saved via localStorage).

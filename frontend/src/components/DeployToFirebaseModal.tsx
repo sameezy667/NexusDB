@@ -64,7 +64,7 @@ export default function DeployToFirebaseModal({
     setMessage("");
 
     try {
-      const response = await fetch(`${apiUrl}/deploy/firebase`, {
+      const response = await fetch(`/api/deploy/firebase`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
